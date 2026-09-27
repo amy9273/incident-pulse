@@ -11,6 +11,8 @@ import { prisma } from "../lib/prisma.js";
 import { ServiceContext } from "../types/express.js";
 import { logger } from "../lib/logger.js";
 import { escalationService } from "./escalation.service.js";
+import { incidentService } from "./incident.service.js";
+import { socketEmitter } from "../sockets/socket.emitter.js";
 
 export class AlertIngestionService {
   /**
@@ -181,15 +183,33 @@ export class AlertIngestionService {
       },
     );
 
-    // 3. If a new incident was created, trigger escalation engine asynchronously
+    // 3. Trigger escalation engine and broadcast WebSocket events
     if (result.status === "created") {
       setImmediate(async () => {
         try {
           await escalationService.startEscalationForIncident(result.incidentId);
+          const incidentDetail = await incidentService.getIncidentById(
+            result.incidentId,
+          );
+          socketEmitter.broadcastIncidentCreated(incidentDetail);
         } catch (err) {
           logger.error(
             { incidentId: result.incidentId, error: (err as Error).message },
-            "Failed to start escalation for new incident",
+            "Failed to process post-creation escalation or WebSocket broadcast",
+          );
+        }
+      });
+    } else if (result.status === "deduplicated") {
+      setImmediate(async () => {
+        try {
+          const incidentDetail = await incidentService.getIncidentById(
+            result.incidentId,
+          );
+          socketEmitter.broadcastIncidentUpdated(incidentDetail);
+        } catch (err) {
+          logger.error(
+            { incidentId: result.incidentId, error: (err as Error).message },
+            "Failed to broadcast deduplicated incident update via WebSockets",
           );
         }
       });

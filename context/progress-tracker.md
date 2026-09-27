@@ -6,11 +6,11 @@ _Update this file after every meaningful implementation step or architectural de
 
 ## Current Phase
 
-- **Phase 1: Project Setup & Backend Core Engine**
+- **Phase 2: Full-Stack Web Dashboard (Next.js)**
 
 ## Current Goal
 
-- Implement Real-Time WebSocket Server (Unit 06).
+- Scaffold Next.js App Shell & Design System (Unit 07).
 
 ---
 
@@ -23,19 +23,21 @@ _Update this file after every meaningful implementation step or architectural de
 - [x] **Unit 03: Authentication & Service Key Verification Middleware**: Implemented `POST /api/v1/auth/login`, `GET /api/v1/auth/me`, JWT verification middleware (`authenticateJwt`), RBAC guard (`requireRole`), machine-to-machine service key verification middleware (`authenticateServiceKey`), custom `AppError` exception hierarchy, Zod request schema validation middleware (`validateBody`), shared auth DTOs in `@incident-pulse/shared`, and verified all test cases, types, and linters.
 - [x] **Unit 04: Alert Ingestion Webhook & Deduplication Engine**: Implemented `POST /api/v1/webhooks/services/:serviceKey` and `POST /api/v1/webhooks/alert`, Zod schema validation with `WebhookAlertSchema`, deterministic SHA-256 fingerprint generation, atomic transactional deduplication against open incidents (`TRIGGERED` / `ACKNOWLEDGED`), audit log append in `IncidentLog`, and comprehensive test suite.
 - [x] **Unit 05: BullMQ Escalation State Machine Worker**: Implemented Redis-backed BullMQ delayed queue (`escalation-queue`) and background worker (`createEscalationWorker`), multi-tier escalation target resolver (`resolveTarget`), automatic escalation state progression on timeout expiration, timer cancellation on `acknowledge`/`resolve` (Invariant #1), incident triage endpoints (`POST /api/v1/incidents/:id/acknowledge`, `POST /api/v1/incidents/:id/resolve`), and full audit history logging.
+- [x] **Unit 06: Real-Time WebSocket Server**: Implemented Socket.io server integrated with Express HTTP server, JWT handshake authentication, automatic room subscriptions (`incidents:global`, `user:${userId}`, `service:${serviceId}`, `incident:${incidentId}`), typed broadcast emitters (`incident:created`, `incident:updated`, `incident:escalated`), integrated event broadcasts across `AlertIngestionService`, `IncidentService`, and `EscalationService`, with full typecheck, lint, and test suite verification.
 
 ---
 
 ## In Progress
 
-- [ ] **Unit 06: Real-Time WebSocket Server**: Implementing Socket.io server integrated with Express/HTTP, room-based tenant dispatching, and broadcast event emitters (`incident:created`, `incident:updated`, `incident:escalated`).
+- [ ] **Unit 07: Next.js App Shell & Design System**: Setting up Next.js 14+ App Router in `apps/web`, Tailwind CSS with semantic tokens from `ui-context.md`, dark/light mode toggle, authenticated shell layout with Lucide icons.
 
 ---
 
 ## Next Up
 
-- [ ] Unit 07: Next.js App Shell & Design System (Phase 2).
-- [ ] Unit 08: Live Incident Triage Feed (Next.js).
+- [ ] Unit 08: Live Incident Triage Feed (Next.js + TanStack Query + WebSockets).
+- [ ] Unit 09: Visual On-Call Schedule Builder.
+- [ ] Unit 10: Service & Webhook Integration Manager.
 
 ---
 
@@ -62,4 +64,5 @@ _Update this file after every meaningful implementation step or architectural de
 - Unit 02 completed on `feat/unit-02-prisma-models-migrations`.
 - Unit 03 completed on `feat/unit-03-auth-service-keys` and merged to `main`.
 - Unit 04 completed on `feat/unit-04-alert-ingestion-deduplication`.
-- Feature branch `feat/unit-05-escalation-worker-bullmq`: Unit 05 implemented and fully verified with typecheck, linter, schema validation, and Prettier formatting passing cleanly.
+- Unit 05 completed on `feat/unit-05-escalation-worker-bullmq`.
+- Unit 06 completed on `feat/unit-06-realtime-websocket-server`: Socket.io server initialized, JWT auth handshake, room dispatching, event broadcasts wired into ingestion, triage, and auto-escalation, verified with 0 errors in typecheck, lint, and Prettier formatting.

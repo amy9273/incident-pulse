@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import {
   EscalationTargetType,
+  IncidentDetail,
   IncidentLogAction,
   IncidentStatus,
 } from "@incident-pulse/shared";
@@ -8,6 +9,7 @@ import { prisma } from "../lib/prisma.js";
 import { logger } from "../lib/logger.js";
 import { env } from "../config/env.js";
 import { escalationQueue } from "../lib/queue.js";
+import { socketEmitter } from "../sockets/socket.emitter.js";
 
 export interface TargetRuleConfig {
   targetType: EscalationTargetType;
@@ -224,6 +226,10 @@ export class EscalationService {
           escalationStep: targetStepNumber,
           assigneeId: targetUser?.id ?? incident.assigneeId,
         },
+        include: {
+          service: { select: { id: true, name: true } },
+          assignee: { select: { id: true, name: true, email: true } },
+        },
       });
 
       // 5. Append immutable IncidentLog
@@ -240,6 +246,29 @@ export class EscalationService {
           },
         },
       });
+
+      const incidentDetail: IncidentDetail = {
+        id: updatedIncident.id,
+        title: updatedIncident.title,
+        summary: updatedIncident.summary,
+        status: updatedIncident.status,
+        urgency: updatedIncident.urgency,
+        serviceId: updatedIncident.serviceId,
+        serviceName: updatedIncident.service.name,
+        assigneeId: updatedIncident.assigneeId,
+        assigneeName: updatedIncident.assignee?.name ?? null,
+        fingerprint: updatedIncident.fingerprint,
+        escalationStep: updatedIncident.escalationStep,
+        alertCount: updatedIncident.alertCount,
+        acknowledgedAt: updatedIncident.acknowledgedAt?.toISOString() ?? null,
+        resolvedAt: updatedIncident.resolvedAt?.toISOString() ?? null,
+        payload: (updatedIncident.payload as Record<string, unknown>) ?? null,
+        createdAt: updatedIncident.createdAt.toISOString(),
+        updatedAt: updatedIncident.updatedAt.toISOString(),
+      };
+
+      // Broadcast real-time escalation event
+      socketEmitter.broadcastIncidentEscalated(incidentDetail);
 
       logger.warn(
         {
