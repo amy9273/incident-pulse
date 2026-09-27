@@ -81,6 +81,7 @@ Before marking any unit complete in `context/progress-tracker.md`, run and verif
 - [ ] Unit/Integration tests pass cleanly with all handles and background tasks terminated.
 - [ ] Component meets the 4-state UI rule and uses tokens from `ui-context.md`.
 - [ ] Clean diff verified (`git diff` has no leftover `console.log`, debugger, or commented-out code).
+- [ ] Clean upstream sync: branch rebased cleanly onto `origin/main` with 0 merge conflicts.
 - [ ] No hardcoded secrets, API keys, or localhost URLs committed.
 - [ ] Zero lingering background tasks (`manage_task(Action='list')` is clean).
 
