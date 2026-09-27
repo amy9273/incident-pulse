@@ -14,6 +14,7 @@ Read the following files in order before implementing or making any architectura
 
 ### Operating Rules
 
+- **Sync Upstream First**: Before starting any new unit or task, always pull latest changes from the primary branch (`git pull origin main` or sync `main` before branching).
 - Update `context/progress-tracker.md` after each meaningful implementation change.
 - Work strictly against the current unit spec in `context/specs/`.
 - If implementation changes architecture, scope, or standards, update the relevant context file before continuing.

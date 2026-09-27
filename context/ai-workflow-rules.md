@@ -26,6 +26,7 @@ These rules govern how AI coding agents must operate while building and modifyin
 
 ## 3. Scoping & Execution Discipline
 
+- **Always Sync Upstream First**: Before starting any new unit or creating a feature branch, pull the latest changes from the primary branch (`git pull origin main` or `git checkout main; git pull origin main`) to ensure your baseline is up-to-date.
 - **One Unit at a Time**: Work on a single, isolated unit per prompt cycle. Complete and verify it before moving to the next.
 - **Never commit to `main` or `master`**: AI agents must **NEVER** commit or push directly to `main` or `master`. Always verify that work is isolated to a feature branch (`feat/unit-NN-description`).
 - **Never bypass errors**: If a TypeScript or compilation error occurs, fix the root cause. Never cast to `any` or suppress linter errors with `@ts-ignore`.
