@@ -18,9 +18,11 @@ apps/api/src/
 ├── controllers/   # Validate input with Zod -> call service -> send HTTP status + JSON
 ├── services/      # Core logic (IncidentService, EscalationService, NotificationService)
 ├── workers/       # BullMQ workers processing delayed jobs
-├── middlewares/   # auth.middleware.ts, error.middleware.ts, validate.middleware.ts
+├── middlewares/   # auth.middleware.ts, correlation.middleware.ts, validate.middleware.ts
 ├── routes/        # Express routers mapping HTTP paths to controllers
 ├── sockets/       # WebSocket event handlers and broadcaster
+├── lib/           # prisma.ts (singleton client), redis.ts (ioredis connection pool)
+├── utils/         # context.ts (AsyncLocalStorage), logger.ts (structured JSON logging)
 └── errors/        # AppError custom hierarchy (NotFound, Unauthorized, Conflict)
 ```
 
@@ -28,6 +30,8 @@ apps/api/src/
 - **Route Validation**: Every mutation endpoint (`POST`, `PUT`, `PATCH`) must run a Zod validation middleware before reaching the controller.
 - **Transactions**: Multi-table updates (e.g. updating incident status and appending to the audit log) must be wrapped in `prisma.$transaction()`.
 - **Environment**: All environment variables are validated at boot in `src/config/env.ts` with Zod. The app exits immediately with code 1 if any required variable is missing.
+- **Singletons & Connection Pooling**: `PrismaClient` and `ioredis` instances must be exported as singletons from `src/lib/` to avoid connection exhaustion against Neon PostgreSQL and Redis Cloud.
+- **Correlation Tracing**: All requests and structured logs must propagate `X-Correlation-ID` using `AsyncLocalStorage` without manual prop-drilling.
 
 ---
 

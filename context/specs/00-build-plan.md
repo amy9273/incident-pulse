@@ -7,14 +7,14 @@ This file defines the decomposed, verifiable units for IncidentPulse in their st
 ## Phase 1: Infrastructure & Backend Core
 
 ### Unit 01: Monorepo Foundation & Docker Environment
-- **What it builds**: Monorepo root configuration (`package.json`), `apps/api` scaffold, and `docker-compose.yml` orchestrating PostgreSQL 16 and Redis 7.
+- **What it builds**: Monorepo root configuration (`package.json`), `apps/api` Express skeleton with AsyncLocalStorage correlation tracing, isolated health probes (`/health/live`, `/health/ready`), and `docker-compose.yml` orchestrating PostgreSQL 16 and Redis 7.
 - **Dependencies**: None.
-- **Output**: Running `docker compose up -d` brings up healthy Postgres and Redis containers.
+- **Output**: Express API successfully passes health checks against live Neon PostgreSQL and Redis Cloud, with Docker Compose ready for local/CI parity.
 
 ### Unit 02: Database Models & Prisma Schema
-- **What it builds**: Complete Prisma relational schema (`User`, `Team`, `Service`, `EscalationPolicy`, `EscalationRule`, `Schedule`, `Incident`, `IncidentLog`) and initial migration.
+- **What it builds**: Complete Prisma relational schema (`User`, `Team`, `TeamMembership`, `Service`, `EscalationPolicy`, `EscalationRule`, `Schedule`, `ScheduleShift`, `Incident`, `IncidentLog`), migrations against Neon PostgreSQL, typed Prisma Client, and test seeds.
 - **Dependencies**: Unit 01.
-- **Output**: Database seeded with test user, service, and escalation policy; Prisma client generated.
+- **Output**: Database migrated on Neon PostgreSQL, seeded with test organization, users, services, and escalation policies; Prisma client generated.
 
 ### Unit 03: Authentication & Service Key Middleware
 - **What it builds**: JWT authentication routes (`/api/v1/auth/login`) and service key verification middleware (`Bearer inc_live_...`).

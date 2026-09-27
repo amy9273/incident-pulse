@@ -4,16 +4,16 @@
 
 | Layer | Technology | Role |
 | :--- | :--- | :--- |
-| **Backend API** | Node.js + Express (TypeScript) | REST endpoints, webhook ingestion, business logic |
-| **Job Queue & Timers** | Redis + BullMQ | Escalation state machine timers, asynchronous dispatch |
+| **Backend API** | Node.js + Express (TypeScript) | REST endpoints, webhook ingestion, correlation tracing |
+| **Job Queue & Timers** | Redis Cloud (AWS Singapore) + BullMQ (`ioredis`) | Escalation state machine timers, asynchronous dispatch |
 | **Real-Time Sync** | Socket.io / WebSockets | Bi-directional live incident feeds to Web and Mobile |
-| **Primary Database** | PostgreSQL + Prisma ORM | Relational data: Incidents, Schedules, Teams, Audit Logs |
+| **Primary Database** | Neon PostgreSQL (AWS Singapore) + Prisma ORM | Relational data: Incidents, Schedules, Teams, Audit Logs |
 | **Web Frontend** | Next.js (TypeScript) + Tailwind CSS | Operator dashboard, schedule builder, analytics |
 | **Web UI Components** | shadcn/ui + Radix UI + Lucide Icons | Accessible, high-density monitoring UI components |
 | **Mobile App** | Flutter (Dart) | Cross-platform mobile responder app (iOS/Android) |
-| **Mobile Local Cache** | SQLite (`sqflite` or `drift`) | Offline-first incident caching and local queue |
+| **Mobile Local Cache** | SQLite (`sqflite` or `drift`) | Offline-first incident caching and transactional outbox |
 | **Notifications** | FCM / Web Push (Mockable in Dev) | Emergency push notifications for on-call engineers |
-| **Containerization** | Docker + Docker Compose | Local reproducible orchestration and testing |
+| **Containerization** | Docker + Docker Compose | Local/CI reproducible orchestration (Postgres 16 + Redis 7) |
 
 ---
 
@@ -28,8 +28,11 @@ incident-pulse/
 │   │   │   ├── services/      # Business logic (Escalation, Ingestion, Notification)
 │   │   │   ├── workers/       # BullMQ delayed queue workers
 │   │   │   ├── sockets/       # WebSocket event emitters
-│   │   │   ├── middlewares/   # Auth, rate limiting, validation
-│   │   │   └── prisma/        # Prisma schema and migrations
+│   │   │   ├── middlewares/   # Auth, rate limiting, correlation ID, validation
+│   │   │   ├── lib/           # prisma.ts (singleton), redis.ts (ioredis pool)
+│   │   │   ├── utils/         # context.ts (AsyncLocalStorage), logger.ts (pino)
+│   │   │   └── routes/        # Express route definitions
+│   │   ├── prisma/            # Prisma schema, migrations, and seeds
 │   │   └── package.json
 │   ├── web/          # Next.js Full-Stack Web Application
 │   │   ├── src/
@@ -46,7 +49,7 @@ incident-pulse/
 │       └── pubspec.yaml
 ├── packages/
 │   └── shared/       # Shared TypeScript types, enums, Zod validation schemas
-├── docker-compose.yml
+├── docker-compose.yml# Local & CI Postgres 16 + Redis 7 services
 ├── context/          # Six-File context documentation & specs
 ├── AGENTS.md
 └── README.md
@@ -56,14 +59,16 @@ incident-pulse/
 
 ## Storage Model
 
-- **PostgreSQL**: Permanent relational storage.
+- **PostgreSQL (Neon Serverless, AWS Singapore `ap-southeast-1` / Docker Compose for local/CI)**:
+  - Permanent relational storage with connection pooling.
   - `User`, `Team`, `TeamMembership`
   - `Service` (with API keys)
   - `EscalationPolicy`, `EscalationRule` (tiers and delays)
   - `Schedule`, `ScheduleShift` (time-based rotations)
   - `Incident` (`id`, `title`, `status`, `urgency`, `serviceId`, `fingerprint`, `assigneeId`)
   - `IncidentLog` (immutable audit trail of every status change, notification sent, and user action)
-- **Redis**: Fast, in-memory ephemeral storage.
+- **Redis (Redis Cloud, AWS Singapore `ap-southeast-1` / Docker Compose for local/CI)**:
+  - Fast, in-memory persistent storage via `ioredis`.
   - BullMQ Delayed Queues: Holds scheduled escalation jobs (e.g. "Escalate incident #42 in 300s").
   - Deduplication Cache: Fingerprint locks to prevent alert flooding.
   - Active WebSocket Socket IDs per User.

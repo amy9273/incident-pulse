@@ -65,7 +65,8 @@
 - Escalation policies with up to 3 tiers and customizable timeout delays.
 - Real-time WebSocket sync between API, Web, and Mobile.
 - Single-organization multi-team data model with JWT auth.
-- Docker Compose setup for local development (PostgreSQL, Redis, API, Web).
+- Cloud persistence via Neon PostgreSQL & Redis Cloud (co-located in AWS Singapore `ap-southeast-1`).
+- Docker Compose setup for local development and CI testing (PostgreSQL 16, Redis 7, API, Web).
 
 ### Out-of-Scope (Non-Goals for Initial Build)
 - Twilio SMS / phone call voice dialing (costly and third-party dependent; mocked if needed).
