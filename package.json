@@ -5,10 +5,12 @@
   "type": "module",
   "description": "Open-Source Incident Response & On-Call Dispatch Platform",
   "workspaces": [
-    "apps/*",
+    "apps/api",
+    "apps/web",
     "packages/*"
   ],
   "scripts": {
+    "postinstall": "npm run prisma:generate --workspace=apps/api --if-present",
     "dev:api": "npm run dev --workspace=apps/api",
     "dev:web": "npm run dev --workspace=apps/web",
     "build:shared": "npm run build --workspace=packages/shared",

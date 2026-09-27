@@ -21,6 +21,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Validate Monorepo Workspaces & Hygiene
+        run: |
+          node -e '
+            const pkg = require("./package.json");
+            const fs = require("fs");
+            if (fs.existsSync("apps/mobile/package.json")) {
+              console.error("ERROR: apps/mobile must NOT contain package.json because Flutter apps use pubspec.yaml.");
+              process.exit(1);
+            }
+            if (Array.isArray(pkg.workspaces) && pkg.workspaces.includes("apps/*")) {
+              console.error("ERROR: package.json workspaces must explicitly list Node workspaces (e.g. apps/api, apps/web) and not include wildcard apps/* to prevent Flutter or other mobile subdirectories from breaking npm ci.");
+              process.exit(1);
+            }
+            console.log("Monorepo workspace validation passed.");
+          '
+
       - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:

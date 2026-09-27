@@ -41,7 +41,7 @@ _Update this file after every meaningful implementation step or architectural de
 
 ## Architecture Decisions
 
-- **Monorepo Structure**: Using `npm workspaces` monorepo containing `apps/api`, `apps/web`, `apps/mobile`, and `packages/shared` for cohesive type sharing and versioning.
+- **Monorepo Structure**: Using `npm workspaces` for Node workspaces (`apps/api`, `apps/web`, and `packages/*`), with `apps/mobile` managed natively via Flutter/Dart (`pubspec.yaml`) to isolate dependency lifecycles and prevent `npm ci` lockfile conflicts.
 - **Cloud Databases**: Neon PostgreSQL and Redis Cloud (co-located in AWS Singapore `ap-southeast-1`), providing serverless Postgres with branching and persistent high-availability Redis for BullMQ delayed queues.
 - **Escalation Engine Timers**: Decided on Redis + BullMQ delayed jobs to ensure state machine timers persist across process restarts (Invariant #1).
 - **WebSocket Protocol**: Using Socket.io for guaranteed fallback, automatic reconnection, and room-based tenant dispatching.
@@ -59,7 +59,10 @@ _Update this file after every meaningful implementation step or architectural de
 - Unit 05 completed on `feat/unit-05-escalation-worker-bullmq`.
 - Unit 06 completed on `feat/unit-06-realtime-websocket-server`.
 - Unit 07 completed on `feat/unit-07-nextjs-app-shell`.
-- [x] **Unit 08: Live Incident Triage Feed**: Real-time WebSocket event ingestion, optimistic 1-click Acknowledge/Resolve actions, audit trail timeline drawer, live test alert simulator, keyboard shortcuts, verified with 0 lint errors, 0 typecheck errors, and 100% passing tests.
-- Unit 09 completed on `feat/unit-09-visual-oncall-schedule-builder`: Visual weekly timeline, active on-call summary, shift creation modal, timezone awareness, and schedule API integration tests.
-- Unit 10 completed on `feat/unit-10-service-webhook-manager`: Monitored service catalog, dynamic key rotation, integration code snippets (cURL, Prometheus, Datadog), and simulated alert runner.
-- Unit 11 completed on `feat/unit-11-flutter-scaffold-design-system`: Scaffolded Flutter Clean Architecture application in `apps/mobile`, Material 3 theme extensions matching `ui-context.md`, 4-state UI widgets, secure storage, Riverpod auth, verified with 0 analyzer issues, clean dart format, and 100% passing tests.
+- Unit 08 completed on `feat/unit-08-live-incident-triage-feed`.
+- Unit 09 completed on `feat/unit-09-visual-oncall-schedule-builder`.
+- Unit 10 completed on `feat/unit-10-service-webhook-manager`.
+- Unit 11 completed on `feat/unit-11-flutter-scaffold-design-system`.
+- Unit 12 completed on `feat/unit-12-offline-incident-cache`.
+- Unit 13 completed on `feat/unit-13-emergency-triage-push-alerts`.
+- Unit 14 completed on `feat/unit-14-automated-testing-ci-cd`: Hardened unified GitHub Actions quality matrix, added monorepo workspace validation guardrail, configured `postinstall` and `pretypecheck` Prisma client generation hooks, and ensured permanent zero-failure resilience across all Node and Flutter CI jobs.
