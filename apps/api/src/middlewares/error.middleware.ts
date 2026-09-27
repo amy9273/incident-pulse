@@ -1,5 +1,5 @@
-import { Request, Response, NextFunction } from 'express';
-import { logger } from '../lib/logger.js';
+import { Request, Response, NextFunction } from "express";
+import { logger } from "../lib/logger.js";
 
 export class AppError extends Error {
   constructor(
@@ -18,9 +18,9 @@ export const errorMiddleware = (
   res: Response,
   _next: NextFunction,
 ) => {
-  const correlationId = req.headers['x-correlation-id'];
+  const correlationId = req.headers["x-correlation-id"];
   const statusCode = err instanceof AppError ? err.statusCode : 500;
-  const message = err.message || 'Internal Server Error';
+  const message = err.message || "Internal Server Error";
 
   logger.error(
     {
@@ -30,7 +30,7 @@ export const errorMiddleware = (
       path: req.path,
       method: req.method,
     },
-    'Request error',
+    "Request error",
   );
 
   res.status(statusCode).json({
