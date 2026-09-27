@@ -209,7 +209,13 @@ This document serves as the master engineering playbook for IncidentPulse across
   - Use Prisma `select`:
     ```typescript
     const incidents = await prisma.incident.findMany({
-      select: { id: true, title: true, status: true, urgency: true, createdAt: true },
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        urgency: true,
+        createdAt: true,
+      },
       take: 20,
     });
     ```
@@ -240,7 +246,10 @@ This document serves as the master engineering playbook for IncidentPulse across
 - **Structured JSON Logging**:
   - Every log entry must be structured JSON, including timestamp, log level, message, and contextual metadata (`incidentId`, `serviceId`, `userId`):
   ```typescript
-  logger.info({ incidentId: "inc_123", action: "ACKNOWLEDGE", userId: "usr_456" }, "Incident acknowledged");
+  logger.info(
+    { incidentId: "inc_123", action: "ACKNOWLEDGE", userId: "usr_456" },
+    "Incident acknowledged",
+  );
   ```
 - **Never Swallow Errors Silently**:
   - ❌ **FORBIDDEN**:
@@ -256,7 +265,10 @@ This document serves as the master engineering playbook for IncidentPulse across
     try {
       await sendNotification();
     } catch (error) {
-      logger.error({ error, incidentId }, "Failed to deliver emergency notification");
+      logger.error(
+        { error, incidentId },
+        "Failed to deliver emergency notification",
+      );
       // Decide: throw AppError or enqueue to dead letter queue
     }
     ```
@@ -281,11 +293,11 @@ This document serves as the master engineering playbook for IncidentPulse across
 Never use a single generic `/health` endpoint in production Kubernetes/Docker environments:
 
 - **Liveness Probe (`GET /health/live`)**:
-  - Answers: *"Is the process responsive and the event loop unblocked?"*
+  - Answers: _"Is the process responsive and the event loop unblocked?"_
   - **Rule**: Keep it extremely lightweight ($< 1\text{ms}$). Returns `200 OK`.
   - ⚠️ **CRITICAL INVARIANT**: **NEVER** check database or Redis connectivity in the liveness probe. If the database experiences a momentary blip, Kubernetes would kill all API pods simultaneously, causing a catastrophic cascade failure.
 - **Readiness Probe (`GET /health/ready`)**:
-  - Answers: *"Is the service ready to accept incoming user traffic?"*
+  - Answers: _"Is the service ready to accept incoming user traffic?"_
   - **Rule**: Ping PostgreSQL (`SELECT 1`) and Redis (`PING`). If unreachable, return `503 Service Unavailable` so traffic is temporarily rerouted away without killing the pod.
 
 ---
@@ -314,4 +326,3 @@ Never use a single generic `/health` endpoint in production Kubernetes/Docker en
     $$\text{Sleep} = \text{random}(0, \min(M, B \cdot 2^{\text{attempt}}))$$
 - **Circuit Breakers**:
   - If a third-party webhook endpoint fails 5 consecutive times, trip the circuit breaker open for 60 seconds to fail fast and avoid wasting worker threads or exhausting socket pools.
-

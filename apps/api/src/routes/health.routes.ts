@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { pool } from "../lib/db.js";
+import { prisma } from "../lib/prisma.js";
 import { redis } from "../lib/redis.js";
 import { logger } from "../lib/logger.js";
 
@@ -42,10 +42,10 @@ healthRouter.get("/ready", async (_req: Request, res: Response) => {
 
   let allHealthy = true;
 
-  // 1. Check PostgreSQL
+  // 1. Check PostgreSQL via Prisma Client
   const dbStart = Date.now();
   try {
-    await pool.query("SELECT 1;");
+    await prisma.$queryRaw`SELECT 1;`;
     checks.database = {
       status: "healthy",
       latencyMs: Date.now() - dbStart,

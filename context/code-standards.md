@@ -3,6 +3,7 @@
 ---
 
 ## 1. General Engineering Principles
+
 - **Strict Typing**: Zero `any` in TypeScript. Zero untyped `dynamic` maps in Dart.
 - **Fail Fast & Explicitly**: Validate all inputs at the boundary using schema parsers (Zod in TypeScript).
 - **Separation of Concerns**: Controllers parse HTTP requests; Services execute business logic; Repositories/Prisma handle database queries.
@@ -13,6 +14,7 @@
 ## 2. Backend Standards (Node.js + Express + TypeScript)
 
 ### Layer Responsibilities
+
 ```
 apps/api/src/
 ├── controllers/   # Validate input with Zod -> call service -> send HTTP status + JSON
@@ -27,6 +29,7 @@ apps/api/src/
 ```
 
 ### Rules
+
 - **Route Validation**: Every mutation endpoint (`POST`, `PUT`, `PATCH`) must run a Zod validation middleware before reaching the controller.
 - **Transactions**: Multi-table updates (e.g. updating incident status and appending to the audit log) must be wrapped in `prisma.$transaction()`.
 - **Environment**: All environment variables are validated at boot in `src/config/env.ts` with Zod. The app exits immediately with code 1 if any required variable is missing.
@@ -82,13 +85,16 @@ flowchart TD
 ### The 4 Automated Pipeline Jobs
 
 #### Job 1: Lint & Style Verification
+
 - **API & Web**: Run `eslint . --max-warnings=0` and `prettier --check .`.
 - **Flutter**: Run `dart format --output=none --set-exit-if-changed .` and `flutter analyze --fatal-infos`.
 
 #### Job 2: Typecheck Gate
+
 - Run `tsc --noEmit` across `apps/api` and `apps/web`. Zero TypeScript compiler errors permitted.
 
 #### Job 3: Automated Testing with Service Containers
+
 - GitHub Actions spins up ephemeral `postgres:16` and `redis:7` containers via Docker service containers.
 - Runs Prisma migrations on the test database.
 - Runs backend integration tests (`jest --runInBand`):
@@ -97,11 +103,13 @@ flowchart TD
   - Testing JWT and API key auth rejection.
 
 #### Job 4: Production Compilation Check
+
 - Run `npm run build` in `apps/api` (outputs clean JavaScript in `dist/`).
 - Run `npm run build` in `apps/web` (Next.js production build passes with no static page generation errors).
 - Run `flutter build apk --debug` in `apps/mobile` (validates Android build integrity).
 
 ## 6. Git & Commit Hygiene
+
 - **NEVER Commit to `main` / `master` Directly**:
   - `main` is a protected production branch. Direct commits/pushes are forbidden.
   - Work on short-lived branches: `feat/unit-NN-description`, `fix/description`, `chore/description`.
