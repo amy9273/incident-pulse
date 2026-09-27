@@ -145,7 +145,8 @@ This document serves as the master engineering playbook for IncidentPulse across
 ## 6. Performance & Scalability (Frontend, Backend, Mobile)
 
 - **Connection Pooling**:
-  - Never create a new database or Redis connection per incoming HTTP request. Use a singleton connection pool (Prisma Client singleton pattern).
+  - Never create a new database or Redis connection per incoming HTTP request. Use singleton connection pools (Prisma Client singleton pattern and `ioredis` connection pool).
+  - For serverless databases like Neon PostgreSQL, utilize pooled connection strings for transactional application queries to prevent connection exhaustion, reserving direct connections for schema migrations.
 - **Client-Side Optimization**:
   - **Debouncing**: Search inputs and filter text boxes must be debounced (300ms) to prevent hammering the backend API.
   - **Virtualization**: Use windowed list rendering (`@tanstack/react-virtual` in Web, `ListView.builder` in Flutter) for long incident feeds to avoid rendering hundreds of off-screen DOM nodes.

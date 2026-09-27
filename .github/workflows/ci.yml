@@ -40,7 +40,12 @@ jobs:
         run: npm run typecheck --workspace=apps/api --if-present
 
       - name: Typecheck Web Frontend
-        run: npm run typecheck --workspace=apps/web --if-present
+        run: |
+          if [ -d "apps/web" ]; then
+            npm run typecheck --workspace=apps/web --if-present
+          else
+            echo "apps/web not scaffolded yet (Phase 2), skipping."
+          fi
 
   # -------------------------------------------------------------
   # Job 2: Backend Integration Tests with DB Services
@@ -58,7 +63,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U incident_pulse -d incident_pulse_test"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -92,7 +97,12 @@ jobs:
         run: npm ci
 
       - name: Run Prisma Migrations
-        run: npm run db:migrate:test --workspace=apps/api --if-present
+        run: |
+          if [ -f "apps/api/prisma/schema.prisma" ]; then
+            npm run db:migrate:test --workspace=apps/api --if-present
+          else
+            echo "Prisma schema not created yet (Unit 02), skipping."
+          fi
 
       - name: Execute API Tests
         run: npm run test --workspace=apps/api --if-present
@@ -117,7 +127,12 @@ jobs:
         run: npm ci
 
       - name: Build Next.js Application
-        run: npm run build --workspace=apps/web --if-present
+        run: |
+          if [ -d "apps/web" ]; then
+            npm run build --workspace=apps/web --if-present
+          else
+            echo "apps/web not scaffolded yet (Phase 2), skipping."
+          fi
         env:
           NEXT_PUBLIC_API_URL: "http://localhost:5000"
 
