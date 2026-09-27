@@ -5,3 +5,4 @@ export * from "./schemas/webhook.schema.js";
 export * from "./schemas/incident.schema.js";
 export * from "./schemas/socket.schema.js";
 export * from "./schemas/schedule.schema.js";
+export * from "./schemas/service.schema.js";

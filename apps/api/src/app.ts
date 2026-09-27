@@ -9,6 +9,8 @@ import { webhookRouter } from "./routes/webhook.routes.js";
 import { incidentRouter } from "./routes/incident.routes.js";
 import { scheduleRouter } from "./routes/schedule.routes.js";
 import { userRouter } from "./routes/user.routes.js";
+import { serviceRouter } from "./routes/service.routes.js";
+import { escalationPolicyRouter } from "./routes/escalation-policy.routes.js";
 import { env } from "./config/env.js";
 
 export const createApp = () => {
@@ -37,6 +39,8 @@ export const createApp = () => {
   app.use("/api/v1/incidents", incidentRouter);
   app.use("/api/v1/schedules", scheduleRouter);
   app.use("/api/v1/users", userRouter);
+  app.use("/api/v1/services", serviceRouter);
+  app.use("/api/v1/escalation-policies", escalationPolicyRouter);
 
   // 5. Root Welcome Route
   app.get("/", (_req, res) => {
