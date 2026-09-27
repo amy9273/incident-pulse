@@ -11,6 +11,7 @@ import { prisma } from "../lib/prisma.js";
 import { ConflictError, NotFoundError } from "../errors/index.js";
 import { escalationService } from "./escalation.service.js";
 import { logger } from "../lib/logger.js";
+import { socketEmitter } from "../sockets/socket.emitter.js";
 
 type IncidentWithRelations = {
   id: string;
@@ -215,7 +216,9 @@ export class IncidentService {
       "Incident successfully acknowledged; escalation timer cancelled",
     );
 
-    return this.getIncidentById(updated.id);
+    const detail = await this.getIncidentById(updated.id);
+    socketEmitter.broadcastIncidentUpdated(detail);
+    return detail;
   }
 
   /**
@@ -271,7 +274,9 @@ export class IncidentService {
       "Incident successfully resolved",
     );
 
-    return this.getIncidentById(updated.id);
+    const detail = await this.getIncidentById(updated.id);
+    socketEmitter.broadcastIncidentUpdated(detail);
+    return detail;
   }
 }
 
