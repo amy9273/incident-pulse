@@ -43,7 +43,9 @@ describe("Alert Ingestion Webhook & Deduplication Engine (Unit 04)", () => {
       });
       assert.ok(dbIncident, "Incident must exist in PostgreSQL");
       assert.strictEqual(dbIncident.alertCount, 1);
-      const triggeredLog = dbIncident.logs.find((l) => l.action === "TRIGGERED");
+      const triggeredLog = dbIncident.logs.find(
+        (l) => l.action === "TRIGGERED",
+      );
       assert.ok(triggeredLog, "Must have TRIGGERED log entry");
     });
 

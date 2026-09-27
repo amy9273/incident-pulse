@@ -177,129 +177,130 @@ export class EscalationService {
     const nextStepToSchedule = await prisma.$transaction(
       async (tx: Prisma.TransactionClient) => {
         // 1. Re-query incident state
-      const incident = await tx.incident.findUnique({
-        where: { id: incidentId },
-        include: {
-          service: {
-            include: {
-              escalationPolicy: {
-                include: {
-                  rules: {
-                    orderBy: { stepNumber: "asc" },
+        const incident = await tx.incident.findUnique({
+          where: { id: incidentId },
+          include: {
+            service: {
+              include: {
+                escalationPolicy: {
+                  include: {
+                    rules: {
+                      orderBy: { stepNumber: "asc" },
+                    },
                   },
                 },
               },
             },
           },
-        },
-      });
+        });
 
-      // 2. If incident was already acknowledged or resolved, abort escalation
-      if (!incident || incident.status !== IncidentStatus.TRIGGERED) {
-        logger.info(
-          { incidentId, status: incident?.status },
-          "Escalation aborted: Incident is no longer in TRIGGERED status",
+        // 2. If incident was already acknowledged or resolved, abort escalation
+        if (!incident || incident.status !== IncidentStatus.TRIGGERED) {
+          logger.info(
+            { incidentId, status: incident?.status },
+            "Escalation aborted: Incident is no longer in TRIGGERED status",
+          );
+          return;
+        }
+
+        const rules = incident.service.escalationPolicy
+          .rules as EscalationRuleRecord[];
+        const targetRule = rules.find(
+          (r: EscalationRuleRecord) => r.stepNumber === targetStepNumber,
         );
-        return;
-      }
 
-      const rules = incident.service.escalationPolicy
-        .rules as EscalationRuleRecord[];
-      const targetRule = rules.find(
-        (r: EscalationRuleRecord) => r.stepNumber === targetStepNumber,
-      );
+        if (!targetRule) {
+          logger.info(
+            { incidentId, targetStepNumber },
+            "Escalation completed: Reached max policy tier",
+          );
+          return;
+        }
 
-      if (!targetRule) {
-        logger.info(
-          { incidentId, targetStepNumber },
-          "Escalation completed: Reached max policy tier",
-        );
-        return;
-      }
+        // 3. Resolve target user for this step
+        const targetUser = await this.resolveTarget(targetRule);
 
-      // 3. Resolve target user for this step
-      const targetUser = await this.resolveTarget(targetRule);
-
-      // 4. Update incident status and escalationStep
-      const updatedIncident = await tx.incident.update({
-        where: { id: incident.id },
-        data: {
-          escalationStep: targetStepNumber,
-          assigneeId: targetUser?.id ?? incident.assigneeId,
-        },
-        include: {
-          service: { select: { id: true, name: true } },
-          assignee: { select: { id: true, name: true, email: true } },
-        },
-      });
-
-      // 5. Append immutable IncidentLog
-      await tx.incidentLog.create({
-        data: {
-          incidentId: incident.id,
-          action: IncidentLogAction.ESCALATED,
-          message: `Auto-escalated to Tier ${targetStepNumber}${targetUser ? ` (${targetUser.name})` : ""}`,
-          actorId: targetUser?.id ?? null,
-          metadata: {
-            previousStep: incident.escalationStep,
-            newStep: targetStepNumber,
-            targetType: targetRule.targetType,
+        // 4. Update incident status and escalationStep
+        const updatedIncident = await tx.incident.update({
+          where: { id: incident.id },
+          data: {
+            escalationStep: targetStepNumber,
+            assigneeId: targetUser?.id ?? incident.assigneeId,
           },
-        },
-      });
+          include: {
+            service: { select: { id: true, name: true } },
+            assignee: { select: { id: true, name: true, email: true } },
+          },
+        });
 
-      const incidentDetail: IncidentDetail = {
-        id: updatedIncident.id,
-        title: updatedIncident.title,
-        summary: updatedIncident.summary,
-        status: updatedIncident.status,
-        urgency: updatedIncident.urgency,
-        serviceId: updatedIncident.serviceId,
-        serviceName: updatedIncident.service.name,
-        assigneeId: updatedIncident.assigneeId,
-        assigneeName: updatedIncident.assignee?.name ?? null,
-        fingerprint: updatedIncident.fingerprint,
-        escalationStep: updatedIncident.escalationStep,
-        alertCount: updatedIncident.alertCount,
-        acknowledgedAt: updatedIncident.acknowledgedAt?.toISOString() ?? null,
-        resolvedAt: updatedIncident.resolvedAt?.toISOString() ?? null,
-        payload: (updatedIncident.payload as Record<string, unknown>) ?? null,
-        createdAt: updatedIncident.createdAt.toISOString(),
-        updatedAt: updatedIncident.updatedAt.toISOString(),
-      };
+        // 5. Append immutable IncidentLog
+        await tx.incidentLog.create({
+          data: {
+            incidentId: incident.id,
+            action: IncidentLogAction.ESCALATED,
+            message: `Auto-escalated to Tier ${targetStepNumber}${targetUser ? ` (${targetUser.name})` : ""}`,
+            actorId: targetUser?.id ?? null,
+            metadata: {
+              previousStep: incident.escalationStep,
+              newStep: targetStepNumber,
+              targetType: targetRule.targetType,
+            },
+          },
+        });
 
-      // Broadcast real-time escalation event
-      socketEmitter.broadcastIncidentEscalated(incidentDetail);
-
-      logger.warn(
-        {
-          incidentId: updatedIncident.id,
-          newStep: targetStepNumber,
+        const incidentDetail: IncidentDetail = {
+          id: updatedIncident.id,
+          title: updatedIncident.title,
+          summary: updatedIncident.summary,
+          status: updatedIncident.status,
+          urgency: updatedIncident.urgency,
+          serviceId: updatedIncident.serviceId,
+          serviceName: updatedIncident.service.name,
           assigneeId: updatedIncident.assigneeId,
-        },
-        `🚨 Incident auto-escalated to Step ${targetStepNumber}`,
-      );
-
-      // 6. Check next step if available
-      const subsequentRule = rules.find(
-        (r: EscalationRuleRecord) => r.stepNumber === targetStepNumber + 1,
-      );
-
-      if (subsequentRule) {
-        const delaySeconds =
-          env.NODE_ENV === "test"
-            ? env.ESCALATION_DEFAULT_TIMEOUT_SEC
-            : targetRule.delayMinutes * 60;
-
-        return {
-          incidentId: incident.id,
-          stepNumber: targetStepNumber + 1,
-          delayMs: delaySeconds * 1000,
+          assigneeName: updatedIncident.assignee?.name ?? null,
+          fingerprint: updatedIncident.fingerprint,
+          escalationStep: updatedIncident.escalationStep,
+          alertCount: updatedIncident.alertCount,
+          acknowledgedAt: updatedIncident.acknowledgedAt?.toISOString() ?? null,
+          resolvedAt: updatedIncident.resolvedAt?.toISOString() ?? null,
+          payload: (updatedIncident.payload as Record<string, unknown>) ?? null,
+          createdAt: updatedIncident.createdAt.toISOString(),
+          updatedAt: updatedIncident.updatedAt.toISOString(),
         };
-      }
 
-      return null;
-    });
+        // Broadcast real-time escalation event
+        socketEmitter.broadcastIncidentEscalated(incidentDetail);
+
+        logger.warn(
+          {
+            incidentId: updatedIncident.id,
+            newStep: targetStepNumber,
+            assigneeId: updatedIncident.assigneeId,
+          },
+          `🚨 Incident auto-escalated to Step ${targetStepNumber}`,
+        );
+
+        // 6. Check next step if available
+        const subsequentRule = rules.find(
+          (r: EscalationRuleRecord) => r.stepNumber === targetStepNumber + 1,
+        );
+
+        if (subsequentRule) {
+          const delaySeconds =
+            env.NODE_ENV === "test"
+              ? env.ESCALATION_DEFAULT_TIMEOUT_SEC
+              : targetRule.delayMinutes * 60;
+
+          return {
+            incidentId: incident.id,
+            stepNumber: targetStepNumber + 1,
+            delayMs: delaySeconds * 1000,
+          };
+        }
+
+        return null;
+      },
+    );
 
     if (nextStepToSchedule) {
       await this.scheduleEscalationStep(
