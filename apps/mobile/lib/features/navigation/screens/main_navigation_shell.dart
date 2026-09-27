@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mobile/core/notifications/notification_provider.dart';
+import 'package:mobile/core/notifications/push_notification_service.dart';
+import 'package:mobile/core/realtime/socket_provider.dart';
 import 'package:mobile/core/theme/app_colors.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/core/theme/app_typography.dart';
@@ -11,6 +14,8 @@ import 'package:mobile/core/widgets/status_badge_widget.dart';
 import 'package:mobile/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:mobile/features/incidents/domain/incident_model.dart';
 import 'package:mobile/features/incidents/presentation/controllers/incidents_controller.dart';
+import 'package:mobile/features/incidents/presentation/screens/incident_detail_screen.dart';
+import 'package:mobile/features/incidents/presentation/widgets/emergency_alert_banner.dart';
 import 'package:mobile/features/incidents/presentation/widgets/incident_card_widget.dart';
 import 'package:mobile/features/incidents/presentation/widgets/sync_status_banner.dart';
 
@@ -25,12 +30,34 @@ class MainNavigationShell extends ConsumerStatefulWidget {
 
 class _MainNavigationShellState extends ConsumerState<MainNavigationShell> {
   int _currentIndex = 0;
+  PushAlertEvent? _activeAlert;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final token = ref.read(authControllerProvider).token;
+      ref.read(socketServiceProvider).connect(authToken: token);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
     final user = authState.user;
     final incidentsState = ref.watch(incidentsControllerProvider);
+
+    // Listen for incoming emergency push alerts
+    ref.listen<AsyncValue<PushAlertEvent>>(incomingAlertStreamProvider, (
+      previous,
+      next,
+    ) {
+      next.whenData((alert) {
+        setState(() {
+          _activeAlert = alert;
+        });
+      });
+    });
 
     return Scaffold(
       appBar: AppBar(
@@ -53,6 +80,17 @@ class _MainNavigationShellState extends ConsumerState<MainNavigationShell> {
           ],
         ),
         actions: [
+          IconButton(
+            tooltip: 'Simulate Emergency P1 Alert',
+            icon: const Icon(
+              Icons.crisis_alert,
+              size: 20,
+              color: AppColors.triggered,
+            ),
+            onPressed: () {
+              ref.read(pushNotificationServiceProvider).simulateIncomingAlert();
+            },
+          ),
           IconButton(
             tooltip: incidentsState.pendingOutboxCount > 0
                 ? '${incidentsState.pendingOutboxCount} offline actions pending'
@@ -81,12 +119,56 @@ class _MainNavigationShellState extends ConsumerState<MainNavigationShell> {
           ),
         ],
       ),
-      body: IndexedStack(
-        index: _currentIndex,
+      body: Column(
         children: [
-          _IncidentsTab(userName: user?.name ?? 'Responder'),
-          const _SchedulesTab(),
-          _ProfileTab(user: user),
+          if (_activeAlert != null)
+            EmergencyAlertBanner(
+              event: _activeAlert!,
+              onDismiss: () {
+                setState(() {
+                  _activeAlert = null;
+                });
+              },
+              onOpen: () {
+                final alert = _activeAlert!;
+                setState(() {
+                  _activeAlert = null;
+                });
+                final existing = incidentsState.incidents.firstWhere(
+                  (i) => i.id == alert.incidentId,
+                  orElse: () => IncidentModel(
+                    id: alert.incidentId,
+                    title: alert.title,
+                    serviceId: alert.serviceName.toLowerCase().replaceAll(
+                      ' ',
+                      '-',
+                    ),
+                    serviceName: alert.serviceName,
+                    status: IncidentStatus.triggered,
+                    urgency: alert.urgency,
+                    fingerprint: alert.fingerprint ?? alert.incidentId,
+                    createdAt: alert.receivedAt,
+                    updatedAt: alert.receivedAt,
+                    payload: alert.payload,
+                  ),
+                );
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => IncidentDetailScreen(incident: existing),
+                  ),
+                );
+              },
+            ),
+          Expanded(
+            child: IndexedStack(
+              index: _currentIndex,
+              children: [
+                _IncidentsTab(userName: user?.name ?? 'Responder'),
+                const _SchedulesTab(),
+                _ProfileTab(user: user),
+              ],
+            ),
+          ),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -308,9 +390,23 @@ class _IncidentsTab extends ConsumerWidget {
                 padding: const EdgeInsets.only(bottom: 12),
                 child: IncidentCardWidget(
                   incident: incident,
-                  onAcknowledge: () =>
-                      controller.acknowledgeIncident(incident.id),
-                  onResolve: () => _showResolveDialog(context, ref, incident),
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            IncidentDetailScreen(incident: incident),
+                      ),
+                    );
+                  },
+                  onAcknowledge: () async {
+                    await ref.read(hapticServiceProvider).acknowledgeImpact();
+                    await controller.acknowledgeIncident(incident.id);
+                  },
+                  onResolve: () async {
+                    await ref.read(hapticServiceProvider).resolveImpact();
+                    if (!context.mounted) return;
+                    _showResolveDialog(context, ref, incident);
+                  },
                 ),
               );
             }),

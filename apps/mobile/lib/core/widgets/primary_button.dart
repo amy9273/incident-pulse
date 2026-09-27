@@ -11,6 +11,9 @@ class PrimaryButton extends StatelessWidget {
   final IconData? icon;
   final double height;
 
+  final Color? backgroundColor;
+  final Color? textColor;
+
   const PrimaryButton({
     super.key,
     required this.label,
@@ -19,6 +22,8 @@ class PrimaryButton extends StatelessWidget {
     this.isDestructive = false,
     this.icon,
     this.height = 56.0, // 56dp minimum touch target
+    this.backgroundColor,
+    this.textColor,
   });
 
   @override
@@ -26,9 +31,10 @@ class PrimaryButton extends StatelessWidget {
     final colors = context.colors;
     final theme = Theme.of(context);
 
-    final backgroundColor = isDestructive
-        ? colors.triggered
-        : theme.colorScheme.primary;
+    final resolvedBg =
+        backgroundColor ??
+        (isDestructive ? colors.triggered : theme.colorScheme.primary);
+    final resolvedText = textColor ?? Colors.white;
 
     return SizedBox(
       height: height,
@@ -36,8 +42,8 @@ class PrimaryButton extends StatelessWidget {
       child: FilledButton(
         onPressed: isLoading ? null : onPressed,
         style: FilledButton.styleFrom(
-          backgroundColor: backgroundColor,
-          foregroundColor: Colors.white,
+          backgroundColor: resolvedBg,
+          foregroundColor: resolvedText,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),
