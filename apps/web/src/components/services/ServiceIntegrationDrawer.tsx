@@ -68,7 +68,7 @@ export function ServiceIntegrationDrawer({
 
   if (!isOpen || !service) return null;
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
   const webhookUrl = `${apiUrl}/api/v1/webhooks/services/${service.serviceKey}`;
 
   const copyToClipboard = (text: string, label: string) => {
