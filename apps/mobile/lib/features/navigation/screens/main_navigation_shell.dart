@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_theme.dart';
-import '../../../core/theme/app_typography.dart';
-import '../../../core/widgets/empty_state_widget.dart';
-import '../../../core/widgets/primary_button.dart';
-import '../../../core/widgets/status_badge_widget.dart';
-import '../../auth/presentation/controllers/auth_controller.dart';
+import 'package:mobile/core/theme/app_colors.dart';
+import 'package:mobile/core/theme/app_theme.dart';
+import 'package:mobile/core/theme/app_typography.dart';
+import 'package:mobile/core/widgets/empty_state_widget.dart';
+import 'package:mobile/core/widgets/error_state_widget.dart';
+import 'package:mobile/core/widgets/primary_button.dart';
+import 'package:mobile/core/widgets/skeleton_widget.dart';
+import 'package:mobile/core/widgets/status_badge_widget.dart';
+import 'package:mobile/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:mobile/features/incidents/domain/incident_model.dart';
+import 'package:mobile/features/incidents/presentation/controllers/incidents_controller.dart';
+import 'package:mobile/features/incidents/presentation/widgets/incident_card_widget.dart';
+import 'package:mobile/features/incidents/presentation/widgets/sync_status_banner.dart';
 
 /// Main navigation shell providing bottom tabs for Incidents, Schedules, and Profile.
 class MainNavigationShell extends ConsumerStatefulWidget {
@@ -24,6 +30,7 @@ class _MainNavigationShellState extends ConsumerState<MainNavigationShell> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
     final user = authState.user;
+    final incidentsState = ref.watch(incidentsControllerProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -47,15 +54,22 @@ class _MainNavigationShellState extends ConsumerState<MainNavigationShell> {
         ),
         actions: [
           IconButton(
-            tooltip: 'Live Status',
-            icon: const Icon(Icons.wifi, color: AppColors.resolved, size: 20),
+            tooltip: incidentsState.pendingOutboxCount > 0
+                ? '${incidentsState.pendingOutboxCount} offline actions pending'
+                : 'All synced with server',
+            icon: Icon(
+              incidentsState.pendingOutboxCount > 0
+                  ? Icons.cloud_upload
+                  : Icons.cloud_done,
+              color: incidentsState.pendingOutboxCount > 0
+                  ? AppColors.acknowledged
+                  : AppColors.resolved,
+              size: 20,
+            ),
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Connected to IncidentPulse Real-Time Gateway'),
-                  duration: Duration(seconds: 2),
-                ),
-              );
+              if (incidentsState.pendingOutboxCount > 0) {
+                ref.read(incidentsControllerProvider.notifier).syncOutbox();
+              }
             },
           ),
           IconButton(
@@ -82,18 +96,20 @@ class _MainNavigationShellState extends ConsumerState<MainNavigationShell> {
             _currentIndex = index;
           });
         },
-        items: const [
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.warning_amber_rounded),
-            activeIcon: Icon(Icons.warning_rounded),
-            label: 'Incidents',
+            icon: const Icon(Icons.warning_amber_rounded),
+            activeIcon: const Icon(Icons.warning_rounded),
+            label: incidentsState.pendingOutboxCount > 0
+                ? 'Incidents (${incidentsState.pendingOutboxCount})'
+                : 'Incidents',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.calendar_today_outlined),
             activeIcon: Icon(Icons.calendar_today_rounded),
             label: 'Schedules',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
             activeIcon: Icon(Icons.person),
             label: 'Profile',
@@ -104,19 +120,73 @@ class _MainNavigationShellState extends ConsumerState<MainNavigationShell> {
   }
 }
 
-class _IncidentsTab extends StatelessWidget {
+class _IncidentsTab extends ConsumerWidget {
   final String userName;
 
   const _IncidentsTab({required this.userName});
 
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
+  void _showResolveDialog(
+    BuildContext context,
+    WidgetRef ref,
+    IncidentModel incident,
+  ) {
+    final noteController = TextEditingController();
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Text('Resolve Incident'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Confirm resolution for "${incident.title}".',
+              style: AppTypography.bodyMedium,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: noteController,
+              decoration: const InputDecoration(
+                labelText: 'Resolution Root-Cause Note (Optional)',
+                hintText: 'e.g., Restarted replica pool, latency normalized',
+              ),
+              maxLines: 2,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(dialogCtx).pop();
+              ref
+                  .read(incidentsControllerProvider.notifier)
+                  .resolveIncident(
+                    incident.id,
+                    resolutionNote: noteController.text.trim(),
+                  );
+            },
+            child: const Text('Resolve'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
+    final incidentsState = ref.watch(incidentsControllerProvider);
+    final controller = ref.read(incidentsControllerProvider.notifier);
+
+    return RefreshIndicator(
+      onRefresh: () => controller.loadIncidents(forceRefresh: true),
+      child: ListView(
+        padding: const EdgeInsets.all(16),
         children: [
           // Greeting & Active Status banner
           Container(
@@ -150,7 +220,7 @@ class _IncidentsTab extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'On-call shifts active • Notifications enabled',
+                        'Offline cache active • Local SQLite sync ready',
                         style: AppTypography.bodySmall.copyWith(
                           color: colors.textSecondary,
                         ),
@@ -162,163 +232,90 @@ class _IncidentsTab extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
+
+          // Offline Outbox Sync Status Banner
+          SyncStatusBanner(
+            pendingCount: incidentsState.pendingOutboxCount,
+            onSyncNow: () => controller.syncOutbox(),
+          ),
 
           // Active Triage Section
           Text('Emergency Triage Queue', style: AppTypography.headlineMedium),
           const SizedBox(height: 4),
           Text(
-            'Showing active incidents awaiting responder action',
+            'Showing active incidents cached in local SQLite storage',
             style: AppTypography.bodySmall.copyWith(
               color: colors.textSecondary,
             ),
           ),
           const SizedBox(height: 16),
 
-          // Demo Incident Card Showcase
-          _IncidentCard(
-            title: 'High Latency on Payment Gateway',
-            service: 'Payment Service',
-            status: IncidentStatus.triggered,
-            duration: '3m ago',
-            urgency: 'HIGH',
-          ),
-          const SizedBox(height: 12),
-          _IncidentCard(
-            title: 'Redis Connection Pool Exhaustion',
-            service: 'Auth Worker',
-            status: IncidentStatus.acknowledged,
-            duration: '14m ago',
-            urgency: 'HIGH',
-          ),
-          const SizedBox(height: 12),
-          _IncidentCard(
-            title: 'PostgreSQL Read Replica Lag > 500ms',
-            service: 'Database Core',
-            status: IncidentStatus.resolved,
-            duration: '1h ago',
-            urgency: 'LOW',
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _IncidentCard extends StatelessWidget {
-  final String title;
-  final String service;
-  final IncidentStatus status;
-  final String duration;
-  final String urgency;
-
-  const _IncidentCard({
-    required this.title,
-    required this.service,
-    required this.status,
-    required this.duration,
-    required this.urgency,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-
-    Color leftBorderColor;
-    switch (status) {
-      case IncidentStatus.triggered:
-        leftBorderColor = colors.triggered;
-        break;
-      case IncidentStatus.acknowledged:
-        leftBorderColor = colors.acknowledged;
-        break;
-      case IncidentStatus.resolved:
-        leftBorderColor = colors.resolved;
-        break;
-    }
-
-    return Card(
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Left Accent Border (Invariant from ui-context.md)
-            Container(
-              width: 5,
-              decoration: BoxDecoration(
-                color: leftBorderColor,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(12),
-                  bottomLeft: Radius.circular(12),
+          // 4-State UI Handling
+          if (incidentsState.isLoading && incidentsState.incidents.isEmpty) ...[
+            // 1. Loading State (Shimmer skeleton cards)
+            ...List.generate(
+              3,
+              (index) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Container(
+                  height: 130,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: colors.surfaceSecondary,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: colors.border),
+                  ),
+                  child: const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          SkeletonWidget(width: 90, height: 20),
+                          SkeletonWidget(width: 50, height: 14),
+                        ],
+                      ),
+                      SizedBox(height: 12),
+                      SkeletonWidget(width: 220, height: 16),
+                      SizedBox(height: 8),
+                      SkeletonWidget(width: 140, height: 12),
+                    ],
+                  ),
                 ),
               ),
             ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        StatusBadgeWidget(status: status),
-                        Text(
-                          duration,
-                          style: AppTypography.bodySmall.copyWith(
-                            color: colors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Text(title, style: AppTypography.titleMedium),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.dns_outlined,
-                          size: 14,
-                          color: colors.textSecondary,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          service,
-                          style: AppTypography.bodySmall.copyWith(
-                            color: colors.textSecondary,
-                          ),
-                        ),
-                        const Spacer(),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: urgency == 'HIGH'
-                                ? colors.urgencyHigh.withValues(alpha: 0.15)
-                                : colors.urgencyLow.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            urgency,
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: urgency == 'HIGH'
-                                  ? colors.urgencyHigh
-                                  : colors.urgencyLow,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+          ] else if (incidentsState.errorMessage != null &&
+              incidentsState.incidents.isEmpty) ...[
+            // 2. Error State with Retry
+            ErrorStateWidget(
+              message: incidentsState.errorMessage!,
+              onRetry: () => controller.loadIncidents(forceRefresh: true),
             ),
+          ] else if (incidentsState.incidents.isEmpty) ...[
+            // 3. Empty State with CTA
+            EmptyStateWidget(
+              icon: Icons.check_circle_outline_rounded,
+              title: 'All Systems Operational',
+              description:
+                  'No active incidents requiring immediate triage. Your services are healthy!',
+              actionLabel: 'Refresh Incident Feed',
+              onAction: () => controller.loadIncidents(forceRefresh: true),
+            ),
+          ] else ...[
+            ...incidentsState.incidents.map((IncidentModel incident) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: IncidentCardWidget(
+                  incident: incident,
+                  onAcknowledge: () =>
+                      controller.acknowledgeIncident(incident.id),
+                  onResolve: () => _showResolveDialog(context, ref, incident),
+                ),
+              );
+            }),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -402,34 +399,25 @@ class _ProfileTab extends ConsumerWidget {
           Card(
             child: Column(
               children: [
-                ListTile(
-                  leading: const Icon(Icons.notifications_active_outlined),
-                  title: const Text('Push Notifications'),
-                  subtitle: const Text('Emergency priority alerts enabled'),
-                  trailing: const Icon(
-                    Icons.check_circle,
-                    color: AppColors.resolved,
-                  ),
+                const ListTile(
+                  leading: Icon(Icons.offline_pin_outlined),
+                  title: Text('SQLite Offline Cache'),
+                  subtitle: Text('Local transactional storage enabled'),
+                  trailing: Icon(Icons.check_circle, color: AppColors.resolved),
                 ),
                 Divider(height: 1, color: colors.border),
-                ListTile(
-                  leading: const Icon(Icons.vibration),
-                  title: const Text('Emergency Haptics'),
-                  subtitle: const Text('High-intensity vibration on alert'),
-                  trailing: const Icon(
-                    Icons.check_circle,
-                    color: AppColors.resolved,
-                  ),
+                const ListTile(
+                  leading: Icon(Icons.sync_alt_rounded),
+                  title: Text('Transactional Outbox Pattern'),
+                  subtitle: Text('Auto-sync on network reconnect'),
+                  trailing: Icon(Icons.check_circle, color: AppColors.resolved),
                 ),
                 Divider(height: 1, color: colors.border),
-                ListTile(
-                  leading: const Icon(Icons.offline_pin_outlined),
-                  title: const Text('Local SQLite Cache'),
-                  subtitle: const Text('Offline runbook storage ready'),
-                  trailing: const Icon(
-                    Icons.check_circle,
-                    color: AppColors.resolved,
-                  ),
+                const ListTile(
+                  leading: Icon(Icons.security),
+                  title: Text('UUIDv4 Entity Uniformity'),
+                  subtitle: Text('Collision-free offline synchronization'),
+                  trailing: Icon(Icons.check_circle, color: AppColors.resolved),
                 ),
               ],
             ),

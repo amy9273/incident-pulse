@@ -7,7 +7,8 @@ _Update this file after every meaningful implementation step or architectural de
 ## Current Phase
 
 - **Phase 3: Flutter Mobile Responder App (Units 11-13)**
-  - In Progress: **Unit 11: Flutter Scaffold & Design System**
+  - Completed: **Unit 11: Flutter Scaffold & Design System**
+  - In Progress: **Unit 12: Offline Incident Cache (SQLite & Transactional Outbox Pattern)**
 
 ---
 
@@ -26,12 +27,12 @@ _Update this file after every meaningful implementation step or architectural de
 - [x] **Unit 09: Visual On-Call Schedule Builder**: Implemented visual weekly timeline and rotation management in `apps/web`, backend REST CRUD endpoints (`/api/v1/schedules`, `/api/v1/schedules/:id`, `/api/v1/schedules/:id/shifts`, `/api/v1/users`), active on-call engineer identification with live countdown badges, modal forms for creating schedules and assigning shifts with timezone awareness and instant TanStack Query cache invalidation, and comprehensive integration tests.
 - [x] **Unit 10: Service & Webhook Integration Manager**: Implemented monitored service registry, dynamic API key rotation, copyable cURL/Prometheus/Datadog/Node.js webhook integration snippets, multi-tier escalation policy bindings, slide-over testing console with live simulated alert runner and instant feedback, and 100% passing test suites across all 70 test cases.
 - [x] **Unit 11: Flutter Scaffold & Design System**: Scaffolded Flutter Clean Architecture application in `apps/mobile` with Riverpod state management, Dio HTTP client with JWT interceptor, secure Keychain/Keystore token storage, Material 3 theme matching `ui-context.md` (Deep Obsidian dark mode `#0B0F19`, light mode `#F8FAFC`, and status tokens), 4-state UI widgets (`SkeletonWidget`, `EmptyStateWidget`, `ErrorStateWidget`, `StatusBadgeWidget` with pulsing beacon, `PrimaryButton` with 56dp touch height), high-contrast login screen with 1-tap demo profile quick-select, authenticated bottom navigation shell with active triage cards, and 100% passing tests and zero analyzer issues.
+- [x] **Unit 12: Offline Incident Cache (SQLite & Transactional Outbox Pattern)**: Implemented local SQLite persistence layer (`AppDatabase`, `IncidentTable`, `OutboxTable`) supporting native mobile and desktop FFI test runners, transactional outbox pattern (Invariants #5 & #7) with UUIDv4 primary keys and atomic status updates (< 16ms optimistic UI latency), `OutboxSyncService` background queue drainer with retry tracking, local-first `IncidentRepositoryImpl` with offline fallback, `SyncStatusBanner`, `IncidentCardWidget` with offline queued badge and 1-tap actions, 100% passing tests (9/9), clean dart format, zero analyzer issues, and clean Prettier verification.
 
 ---
 
 ## Next Up
 
-- [ ] Unit 12: Offline Incident Cache (SQLite & Transactional Outbox Pattern).
 - [ ] Unit 13: Emergency 1-Tap Triage UI & Push Handling.
 
 ---
