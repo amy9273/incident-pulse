@@ -1,17 +1,10 @@
-import { describe, it, after } from "node:test";
+import { describe, it } from "node:test";
 import assert from "node:assert";
 import request from "supertest";
 import { createApp } from "../app.js";
-import { prisma } from "../lib/prisma.js";
-import { redis } from "../lib/redis.js";
 
 describe("Health & Status Probes (Unit 01 / Unit 02)", () => {
   const app = createApp();
-
-  after(async () => {
-    await prisma.$disconnect();
-    redis.disconnect();
-  });
 
   it("GET / should return operational welcome message", async () => {
     const res = await request(app).get("/");

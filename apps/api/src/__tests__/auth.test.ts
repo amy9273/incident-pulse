@@ -1,10 +1,10 @@
-import { describe, it, before, after } from "node:test";
+import { describe, it, before } from "node:test";
 import assert from "node:assert";
 import request from "supertest";
 import express from "express";
-import { createApp } from "../app.js";
-import { prisma } from "../lib/prisma.js";
-import { redis } from "../lib/redis.js";
+import { authRouter } from "../routes/auth.routes.js";
+import { correlationMiddleware } from "../middlewares/correlation.middleware.js";
+import { errorMiddleware } from "../middlewares/error.middleware.js";
 import { seed } from "../seeds/seed.js";
 import { UserRole } from "@incident-pulse/shared";
 import {
@@ -20,7 +20,10 @@ describe("Authentication & Service Key Middleware (Unit 03)", () => {
     // Ensure clean seeded state
     await seed();
 
-    app = createApp();
+    app = express();
+    app.use(express.json());
+    app.use(correlationMiddleware);
+    app.use("/api/v1/auth", authRouter);
 
     // Attach test routes to verify middlewares in isolation
     app.get(
@@ -56,11 +59,9 @@ describe("Authentication & Service Key Middleware (Unit 03)", () => {
         res.json({ status: "success", service: req.service });
       },
     );
-  });
 
-  after(async () => {
-    await prisma.$disconnect();
-    redis.disconnect();
+    // Centralized Error Middleware MUST be last
+    app.use(errorMiddleware);
   });
 
   describe("POST /api/v1/auth/login", () => {

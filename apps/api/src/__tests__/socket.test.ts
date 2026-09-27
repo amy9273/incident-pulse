@@ -6,7 +6,6 @@ import { io as Client, Socket as ClientSocket } from "socket.io-client";
 import request from "supertest";
 import { createApp } from "../app.js";
 import { prisma } from "../lib/prisma.js";
-import { redis } from "../lib/redis.js";
 import { seed } from "../seeds/seed.js";
 import { authService } from "../services/auth.service.js";
 import {
@@ -70,8 +69,6 @@ describe("Real-Time WebSocket Server (Unit 06)", () => {
     await new Promise<void>((resolve) => {
       httpServer.close(() => resolve());
     });
-    await prisma.$disconnect();
-    redis.disconnect();
   });
 
   describe("Authentication Handshake", () => {

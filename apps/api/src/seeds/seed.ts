@@ -25,14 +25,16 @@ export async function seed() {
   await prisma.team.deleteMany();
   await prisma.user.deleteMany();
 
-  const passwordHash = await bcrypt.hash("Password123!", 10);
+  const adminPasswordHash = await bcrypt.hash("AdminPassword123!", 10);
+  const responderPasswordHash = await bcrypt.hash("ResponderPassword123!", 10);
+  const defaultPasswordHash = await bcrypt.hash("Password123!", 10);
 
   // 1. Users
   logger.info("Creating users...");
   const admin = await prisma.user.create({
     data: {
       email: "admin@incidentpulse.io",
-      passwordHash,
+      passwordHash: adminPasswordHash,
       name: "System Administrator",
       role: UserRole.ADMIN,
     },
@@ -41,7 +43,7 @@ export async function seed() {
   const sarah = await prisma.user.create({
     data: {
       email: "sarah.chen@incidentpulse.io",
-      passwordHash,
+      passwordHash: responderPasswordHash,
       name: "Sarah Chen (Primary On-Call)",
       role: UserRole.RESPONDER,
     },
@@ -50,7 +52,7 @@ export async function seed() {
   const alex = await prisma.user.create({
     data: {
       email: "alex.kumar@incidentpulse.io",
-      passwordHash,
+      passwordHash: responderPasswordHash,
       name: "Alex Kumar (Secondary On-Call)",
       role: UserRole.RESPONDER,
     },
@@ -59,7 +61,7 @@ export async function seed() {
   const viewer = await prisma.user.create({
     data: {
       email: "viewer@incidentpulse.io",
-      passwordHash,
+      passwordHash: defaultPasswordHash,
       name: "Stakeholder Viewer",
       role: UserRole.VIEWER,
     },
@@ -317,15 +319,4 @@ export async function seed() {
     },
     "✅ Database seeded successfully!",
   );
-}
-
-if (process.argv[1] && process.argv[1].includes("seed")) {
-  seed()
-    .catch((e) => {
-      logger.error({ error: e }, "❌ Database seed failed");
-      process.exit(1);
-    })
-    .finally(async () => {
-      await prisma.$disconnect();
-    });
 }

@@ -1,4 +1,4 @@
-import { describe, it, before, after } from "node:test";
+import { describe, it, before } from "node:test";
 import assert from "node:assert";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
@@ -13,10 +13,6 @@ describe("Prisma Relational Models & Integrity (Unit 02)", () => {
   before(async () => {
     // Seed database before running tests
     await seed();
-  });
-
-  after(async () => {
-    await prisma.$disconnect();
   });
 
   it("should query seeded users with proper roles", async () => {

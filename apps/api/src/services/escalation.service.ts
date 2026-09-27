@@ -145,7 +145,7 @@ export class EscalationService {
     nextStepNumber: number,
     delayMs: number,
   ): Promise<void> {
-    const jobId = `escalation:${incidentId}:step:${nextStepNumber}`;
+    const jobId = `escalation_${incidentId}_step_${nextStepNumber}`;
 
     await escalationQueue.add(
       "escalate",
@@ -174,8 +174,9 @@ export class EscalationService {
     incidentId: string,
     targetStepNumber: number,
   ): Promise<void> {
-    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      // 1. Re-query incident state
+    const nextStepToSchedule = await prisma.$transaction(
+      async (tx: Prisma.TransactionClient) => {
+        // 1. Re-query incident state
       const incident = await tx.incident.findUnique({
         where: { id: incidentId },
         include: {
@@ -279,7 +280,7 @@ export class EscalationService {
         `🚨 Incident auto-escalated to Step ${targetStepNumber}`,
       );
 
-      // 6. Schedule next step if available
+      // 6. Check next step if available
       const subsequentRule = rules.find(
         (r: EscalationRuleRecord) => r.stepNumber === targetStepNumber + 1,
       );
@@ -290,16 +291,23 @@ export class EscalationService {
             ? env.ESCALATION_DEFAULT_TIMEOUT_SEC
             : targetRule.delayMinutes * 60;
 
-        // Schedule outside of tx or after tx commits
-        setImmediate(async () => {
-          await this.scheduleEscalationStep(
-            incident.id,
-            targetStepNumber + 1,
-            delaySeconds * 1000,
-          );
-        });
+        return {
+          incidentId: incident.id,
+          stepNumber: targetStepNumber + 1,
+          delayMs: delaySeconds * 1000,
+        };
       }
+
+      return null;
     });
+
+    if (nextStepToSchedule) {
+      await this.scheduleEscalationStep(
+        nextStepToSchedule.incidentId,
+        nextStepToSchedule.stepNumber,
+        nextStepToSchedule.delayMs,
+      );
+    }
   }
 
   /**
@@ -307,13 +315,27 @@ export class EscalationService {
    */
   async cancelEscalation(incidentId: string): Promise<void> {
     try {
-      const delayedJobs = await escalationQueue.getDelayed();
+      // 1. Direct removal by deterministic job IDs
+      for (let step = 1; step <= 10; step++) {
+        const jobId = `escalation_${incidentId}_step_${step}`;
+        const job = await escalationQueue.getJob(jobId);
+        if (job) {
+          await job.remove();
+          logger.info(
+            { jobId, incidentId },
+            "🗑️ Removed pending BullMQ escalation timer job",
+          );
+        }
+      }
+
+      // 2. Scan delayed queue for any residual jobs
+      const delayedJobs = await escalationQueue.getDelayed(0, 1000);
       for (const job of delayedJobs) {
-        if (job.data.incidentId === incidentId) {
+        if (job.data?.incidentId === incidentId) {
           await job.remove();
           logger.info(
             { jobId: job.id, incidentId },
-            "🗑️ Removed pending BullMQ escalation timer job",
+            "🗑️ Removed residual BullMQ delayed escalation job",
           );
         }
       }

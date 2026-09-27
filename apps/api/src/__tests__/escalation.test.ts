@@ -4,7 +4,6 @@ import request from "supertest";
 import express from "express";
 import { createApp } from "../app.js";
 import { prisma } from "../lib/prisma.js";
-import { redis } from "../lib/redis.js";
 import { seed } from "../seeds/seed.js";
 import {
   IncidentLogAction,
@@ -48,7 +47,6 @@ describe("BullMQ Escalation State Machine Worker (Unit 05)", () => {
     await worker.close();
     await escalationQueue.close();
     await prisma.$disconnect();
-    redis.disconnect();
   });
 
   describe("Incident Triage Endpoints", () => {
@@ -234,22 +232,27 @@ describe("BullMQ Escalation State Machine Worker (Unit 05)", () => {
 
     it("schedules and cancels BullMQ delayed jobs cleanly (Invariant #1)", async () => {
       const testId = "00000000-0000-0000-0000-000000000001";
-      await escalationService.scheduleEscalationStep(testId, 2, 60000);
+      const jobId = `escalation_${testId}_step_2`;
 
-      // Verify job in queue
-      const delayed = await escalationQueue.getDelayed();
-      const found = delayed.find((j) => j.data.incidentId === testId);
-      assert.ok(found, "Job must exist in BullMQ delayed queue");
+      try {
+        await escalationService.scheduleEscalationStep(testId, 2, 60000);
 
-      // Cancel job
-      await escalationService.cancelEscalation(testId);
-      const afterCancel = await escalationQueue.getDelayed();
-      const cancelled = afterCancel.find((j) => j.data.incidentId === testId);
-      assert.strictEqual(
-        cancelled,
-        undefined,
-        "Job must be removed after cancelEscalation",
-      );
+        // Verify job in queue
+        const job = await escalationQueue.getJob(jobId);
+        assert.ok(job, `Job ${jobId} must exist in BullMQ delayed queue`);
+        assert.strictEqual(job?.data?.incidentId, testId);
+
+        // Cancel job
+        await escalationService.cancelEscalation(testId);
+        const afterCancelJob = await escalationQueue.getJob(jobId);
+        assert.ok(
+          !afterCancelJob,
+          "Job must be removed after cancelEscalation",
+        );
+      } catch (err) {
+        console.error("DEBUG TEST ERROR:", err);
+        throw err;
+      }
     });
   });
 });
