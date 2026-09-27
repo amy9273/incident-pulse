@@ -21,8 +21,20 @@ export const createApp = () => {
   app.use(helmet());
   app.use(
     cors({
-      origin: env.WEB_URL,
+      origin: (origin, callback) => {
+        // Allow native mobile apps, curl, server-to-server (origin is undefined)
+        if (!origin) return callback(null, true);
+        // Allow configured web URL or any localhost / 127.0.0.1 port (Next.js on 3000, Flutter web on Chrome)
+        if (
+          origin === env.WEB_URL ||
+          /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
+        ) {
+          return callback(null, true);
+        }
+        return callback(new Error(`Origin ${origin} not allowed by CORS`));
+      },
       credentials: true,
+      maxAge: 0,
     }),
   );
 
