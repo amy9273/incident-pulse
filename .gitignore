@@ -8,6 +8,8 @@ dist/
 build/
 .next/
 out/
+*.tsbuildinfo
+*.tsbuildinfo*
 
 # Environment Variables & Secrets (CRITICAL: NEVER COMMIT)
 .env
