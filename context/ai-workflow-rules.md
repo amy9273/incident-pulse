@@ -26,10 +26,13 @@ These rules govern how AI coding agents must operate while building and modifyin
 
 ## 3. Scoping & Execution Discipline
 
-- **Always Sync Upstream First**: Before starting any new unit or creating a feature branch, pull the latest changes from the primary branch (`git pull origin main` or `git checkout main; git pull origin main`) to ensure your baseline is up-to-date.
+- **Always Sync Upstream First (Mandatory Baseline)**: Before starting any new unit or creating a feature branch, ALWAYS switch to `main`, run `git fetch origin main && git pull origin main`, and verify local `main` matches `origin/main`. Always branch directly from updated `main` (`git checkout -b feat/unit-NN-... origin/main`). NEVER branch off an unmerged or pre-squash feature branch.
 - **One Unit at a Time**: Work on a single, isolated unit per prompt cycle. Complete and verify it before moving to the next.
 - **Explicit Consent Before Proceeding**: Never automatically proceed to the next unit without explicit user consent. Always complete, test, and present the current unit's deliverables, and wait for the user to instruct or approve moving to the next unit.
-- **Build Artifact Hygiene & Merge Conflict Prevention**: Never commit temporary compiler cache files (`*.tsbuildinfo`), build outputs (`.next/`, `dist/`), or local runtime files. Always keep `.gitignore` updated. Before pushing, merge `origin/main` to proactively resolve any registry conflicts and ensure 0 merge conflicts.
+- **Build Artifact Hygiene & Pre-Push Upstream Sync**:
+  - Never commit temporary compiler cache files (`*.tsbuildinfo`), build outputs (`.next/`, `dist/`), or local runtime files. Always keep `.gitignore` updated.
+  - **Before pushing ANY feature branch**, ALWAYS run `git fetch origin main`. If `origin/main` has advanced (e.g., prior PR squash-merged), rebase onto `origin/main` (`git rebase origin/main` or `git rebase --onto origin/main <base> <branch>`).
+  - Verify `git diff --stat origin/main` contains exclusively the changes for the current unit and that GitHub PR will show 0 merge conflicts.
 - **Never commit to `main` or `master`**: AI agents must **NEVER** commit or push directly to `main` or `master`. Always verify that work is isolated to a feature branch (`feat/unit-NN-description`).
 - **Never bypass errors**: If a TypeScript or compilation error occurs, fix the root cause. Never cast to `any` or suppress linter errors with `@ts-ignore`.
 - **Keep Documentation in Sync**:

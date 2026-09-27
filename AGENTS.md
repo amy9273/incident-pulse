@@ -14,7 +14,8 @@ Read the following files in order before implementing or making any architectura
 
 ### Operating Rules
 
-- **Sync Upstream First**: Before starting any new unit or task, always pull latest changes from the primary branch (`git pull origin main` or sync `main` before branching).
+- **Sync Upstream First (Mandatory Baseline)**: Before starting any new unit or creating a feature branch, ALWAYS switch to `main`, run `git fetch origin main && git pull origin main`, and verify local `main` matches `origin/main`. Always branch directly from updated `main` (`git checkout -b feat/unit-NN-... origin/main`). NEVER branch off an unmerged or pre-squash feature branch.
+- **Pre-Push Upstream Sync & Rebase**: Before pushing ANY branch, always run `git fetch origin main`. If `origin/main` has advanced (e.g. after a squash-and-merge of a prior PR), rebase your feature branch cleanly onto `origin/main` (`git rebase origin/main` or `git rebase --onto origin/main <base> <branch>`), verify `git diff --stat origin/main` reflects only current unit changes, and ensure 0 merge conflicts exist before pushing.
 - Update `context/progress-tracker.md` after each meaningful implementation change.
 - Work strictly against the current unit spec in `context/specs/`.
 - Never violate the architectural invariants documented in `context/architecture.md` or best practices in `context/engineering-best-practices.md`.
