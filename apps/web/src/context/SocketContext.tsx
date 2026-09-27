@@ -10,12 +10,14 @@ interface SocketContextType {
   socket: Socket | null;
   isConnected: boolean;
   lastEventTime: Date | null;
+  recentlyCreatedIncidentId: string | null;
 }
 
 const SocketContext = React.createContext<SocketContextType>({
   socket: null,
   isConnected: false,
   lastEventTime: null,
+  recentlyCreatedIncidentId: null,
 });
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -26,6 +28,8 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   const [socket, setSocket] = React.useState<Socket | null>(null);
   const [isConnected, setIsConnected] = React.useState<boolean>(false);
   const [lastEventTime, setLastEventTime] = React.useState<Date | null>(null);
+  const [recentlyCreatedIncidentId, setRecentlyCreatedIncidentId] =
+    React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (!isAuthenticated || !token) {
@@ -61,6 +65,18 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       WebSocketEvent.INCIDENT_CREATED,
       (incident: IncidentDetail) => {
         setLastEventTime(new Date());
+        setRecentlyCreatedIncidentId(incident.id);
+        setTimeout(() => {
+          setRecentlyCreatedIncidentId((curr) =>
+            curr === incident.id ? null : curr,
+          );
+        }, 2500);
+
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("incidentpulse:play-alert", { detail: incident }),
+          );
+        }
 
         queryClient.invalidateQueries({ queryKey: ["incidents"] });
         queryClient.setQueryData(["incident", incident.id], incident);
@@ -97,7 +113,14 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   }, [token, isAuthenticated, queryClient]);
 
   return (
-    <SocketContext.Provider value={{ socket, isConnected, lastEventTime }}>
+    <SocketContext.Provider
+      value={{
+        socket,
+        isConnected,
+        lastEventTime,
+        recentlyCreatedIncidentId,
+      }}
+    >
       {children}
     </SocketContext.Provider>
   );

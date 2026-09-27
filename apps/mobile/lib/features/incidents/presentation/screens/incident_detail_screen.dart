@@ -158,6 +158,7 @@ class _IncidentDetailScreenState extends ConsumerState<IncidentDetailScreen> {
         ],
       ),
       body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
             Expanded(
@@ -330,7 +331,12 @@ class _IncidentDetailScreenState extends ConsumerState<IncidentDetailScreen> {
 
             // Sticky Bottom Action Bar (Fat-Finger Ergonomics >= 56dp)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: EdgeInsets.fromLTRB(
+                16,
+                12,
+                16,
+                12 + MediaQuery.of(context).padding.bottom,
+              ),
               decoration: BoxDecoration(
                 color: AppColors.darkSurface,
                 border: const Border(

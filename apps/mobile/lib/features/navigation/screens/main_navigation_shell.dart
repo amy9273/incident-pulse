@@ -417,18 +417,271 @@ class _IncidentsTab extends ConsumerWidget {
   }
 }
 
-class _SchedulesTab extends StatelessWidget {
+class _SchedulesTab extends ConsumerWidget {
   const _SchedulesTab();
 
   @override
-  Widget build(BuildContext context) {
-    return const EmptyStateWidget(
-      icon: Icons.calendar_month_outlined,
-      title: 'Primary Rotation Active',
-      description:
-          'You are currently assigned to Tier 1 Escalation for Payment Service and API Gateway until Monday 09:00 UTC.',
-      actionLabel: 'Refresh Schedule',
-      onAction: null,
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
+    final user = ref.watch(authControllerProvider).user;
+    final responderName = user?.name ?? 'Sarah Chen';
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        // Header
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('On-Call Coverage', style: AppTypography.headlineMedium),
+                const SizedBox(height: 2),
+                Text(
+                  'Active shift rotations & escalation routing',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: colors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: colors.resolved.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: colors.resolved.withValues(alpha: 0.4),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 7,
+                    height: 7,
+                    decoration: BoxDecoration(
+                      color: colors.resolved,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'ACTIVE SHIFT',
+                    style: TextStyle(
+                      color: colors.resolved,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+
+        // Active Shift Main Card
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 22,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      child: Text(
+                        responderName.isNotEmpty
+                            ? responderName[0].toUpperCase()
+                            : 'S',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                responderName,
+                                style: AppTypography.titleMedium,
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: colors.triggered.withValues(
+                                    alpha: 0.15,
+                                  ),
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(
+                                    color: colors.triggered.withValues(
+                                      alpha: 0.3,
+                                    ),
+                                  ),
+                                ),
+                                child: Text(
+                                  'Level 1 Primary',
+                                  style: TextStyle(
+                                    color: colors.triggered,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Core Payments Rotation • Shift ends in 4h 12m',
+                            style: AppTypography.bodySmall.copyWith(
+                              color: colors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const Divider(height: 1),
+                const SizedBox(height: 12),
+
+                // Timing & Timezone
+                Row(
+                  children: [
+                    Icon(Icons.schedule, size: 16, color: colors.textSecondary),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Mon 09:00 - Mon 09:00 (UTC)',
+                      style: AppTypography.bodySmall.copyWith(
+                        color: colors.textSecondary,
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colors.surfaceSecondary,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'UTC+00:00',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: colors.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Monitored Services Under Active Coverage
+        Text(
+          'Monitored Services Under Coverage',
+          style: AppTypography.titleMedium,
+        ),
+        const SizedBox(height: 8),
+        Card(
+          child: Column(
+            children: [
+              const ListTile(
+                dense: true,
+                leading: Icon(Icons.dns, size: 20),
+                title: Text(
+                  'Payment API Gateway',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text('Direct Webhook Ingestion • Tier 1'),
+                trailing: StatusBadgeWidget(status: IncidentStatus.resolved),
+              ),
+              Divider(height: 1, color: colors.border),
+              const ListTile(
+                dense: true,
+                leading: Icon(Icons.hub_outlined, size: 20),
+                title: Text(
+                  'Billing Worker Queue',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text('BullMQ Delayed Escalation • Tier 1'),
+                trailing: StatusBadgeWidget(status: IncidentStatus.resolved),
+              ),
+              Divider(height: 1, color: colors.border),
+              const ListTile(
+                dense: true,
+                leading: Icon(Icons.storage_outlined, size: 20),
+                title: Text(
+                  'Postgres Replica Pool',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text('Multi-Tier Automated Failover • Tier 1'),
+                trailing: StatusBadgeWidget(status: IncidentStatus.resolved),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Secondary Escalation Contact Card
+        Text(
+          'Secondary Escalation Backup (Level 2)',
+          style: AppTypography.titleMedium,
+        ),
+        const SizedBox(height: 8),
+        Card(
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: colors.surfaceSecondary,
+              child: const Text(
+                'AK',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            title: const Text(
+              'Alex Kumar (Platform Lead)',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            subtitle: const Text(
+              'Escalates automatically after 5m unacknowledged',
+            ),
+            trailing: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: colors.surfaceSecondary,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: colors.border),
+              ),
+              child: const Text(
+                'Tier 2',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

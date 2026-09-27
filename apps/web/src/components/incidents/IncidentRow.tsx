@@ -9,6 +9,7 @@ import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { Layers, User, Clock, ShieldAlert, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useSocket } from "@/context/SocketContext";
 
 interface IncidentRowProps {
   incident: IncidentDetail;
@@ -38,9 +39,14 @@ export function IncidentRow({
   isAckLoading = false,
   isResolveLoading = false,
 }: IncidentRowProps) {
+  const { recentlyCreatedIncidentId } = useSocket();
   const isTriggered = incident.status === IncidentStatus.TRIGGERED;
   const isAck = incident.status === IncidentStatus.ACKNOWLEDGED;
   const isResolved = incident.status === IncidentStatus.RESOLVED;
+
+  const isRecentAlert =
+    recentlyCreatedIncidentId === incident.id ||
+    (isTriggered && Date.now() - new Date(incident.createdAt).getTime() < 4000);
 
   return (
     <div
@@ -50,6 +56,7 @@ export function IncidentRow({
         isTriggered && "border-l-4 border-l-red-500 hover:shadow-red-500/5",
         isAck && "border-l-4 border-l-amber-500 hover:shadow-amber-500/5",
         isResolved && "border-l-4 border-l-emerald-500 opacity-80",
+        isRecentAlert && "animate-flash-incident",
       )}
     >
       {/* Left Details */}

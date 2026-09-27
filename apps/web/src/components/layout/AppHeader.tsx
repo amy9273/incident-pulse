@@ -4,6 +4,7 @@ import * as React from "react";
 import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
 import { LiveStatusIndicator } from "../ui/LiveStatusIndicator";
+import { AudioAlertToggle } from "../ui/AudioAlertToggle";
 import { ThemeToggle } from "../ui/ThemeToggle";
 import { UserDropdown } from "./UserDropdown";
 import { Button } from "../ui/Button";
@@ -51,6 +52,7 @@ export function AppHeader({ onMenuClick }: AppHeaderProps) {
       {/* Right section: Live status, Theme, User */}
       <div className="flex items-center gap-2.5">
         <LiveStatusIndicator isConnected={isConnected} />
+        <AudioAlertToggle />
 
         <div className="h-4 w-[1px] bg-border mx-1" />
 

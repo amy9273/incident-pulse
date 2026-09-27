@@ -18,6 +18,18 @@ class _RawPayloadViewerWidgetState extends State<RawPayloadViewerWidget> {
   bool _isExpanded = false;
   bool _copied = false;
 
+  String _buildAttributeSummary() {
+    if (widget.payload == null || widget.payload!.isEmpty) return '';
+    final keys = widget.payload!.keys.take(3).toList();
+    final parts = keys
+        .map((k) {
+          final val = widget.payload![k];
+          return '$k: $val';
+        })
+        .join(' • ');
+    return parts;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.payload == null || widget.payload!.isEmpty) {
@@ -88,6 +100,48 @@ class _RawPayloadViewerWidgetState extends State<RawPayloadViewerWidget> {
               ),
             ),
           ),
+          if (!_isExpanded) ...[
+            Padding(
+              padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF070B12),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: AppColors.darkBorder.withValues(alpha: 0.5),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _buildAttributeSummary(),
+                        style: const TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 11,
+                          color: Color(0xFF93C5FD),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Expand [▼]',
+                      style: AppTypography.badgeLabel.copyWith(
+                        color: AppColors.darkBrandPrimary,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
           if (_isExpanded) ...[
             const Divider(height: 1, color: AppColors.darkBorder),
             Padding(

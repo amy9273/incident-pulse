@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/primary_button.dart';
@@ -45,7 +46,7 @@ class IncidentCardWidget extends StatelessWidget {
         break;
     }
 
-    return Card(
+    final card = Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
@@ -228,5 +229,43 @@ class IncidentCardWidget extends StatelessWidget {
         ),
       ),
     );
+
+    if (incident.status == IncidentStatus.triggered) {
+      return Dismissible(
+        key: ValueKey('incident-card-dismiss-${incident.id}'),
+        direction: DismissDirection.startToEnd,
+        background: Container(
+          alignment: Alignment.centerLeft,
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          decoration: BoxDecoration(
+            color: colors.acknowledged,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Row(
+            children: [
+              Icon(Icons.check_circle_outline, color: Colors.black, size: 24),
+              SizedBox(width: 8),
+              Text(
+                'ACKNOWLEDGE',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                  letterSpacing: 1,
+                ),
+              ),
+            ],
+          ),
+        ),
+        confirmDismiss: (direction) async {
+          await HapticFeedback.mediumImpact();
+          onAcknowledge();
+          return false;
+        },
+        child: card,
+      );
+    }
+
+    return card;
   }
 }
