@@ -34,6 +34,7 @@ export const createApp = () => {
         return callback(new Error(`Origin ${origin} not allowed by CORS`));
       },
       credentials: true,
+      maxAge: 0,
     }),
   );
 
