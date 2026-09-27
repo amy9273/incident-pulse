@@ -1,0 +1,11 @@
+node_modules
+dist
+.next
+.dart_tool
+.flutter-plugins
+.flutter-plugins-dependencies
+apps/mobile/build
+apps/mobile/android/.gradle
+apps/mobile/.dart_tool
+package-lock.json
+*.tsbuildinfo
