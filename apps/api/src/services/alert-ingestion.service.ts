@@ -10,6 +10,7 @@ import {
 import { prisma } from "../lib/prisma.js";
 import { ServiceContext } from "../types/express.js";
 import { logger } from "../lib/logger.js";
+import { escalationService } from "./escalation.service.js";
 
 export class AlertIngestionService {
   /**
@@ -48,44 +49,104 @@ export class AlertIngestionService {
 
     const hasPayload = alertData.payload !== undefined;
 
-    return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      // 1. Check for open incident with identical fingerprint on this service
-      const openIncident = await tx.incident.findFirst({
-        where: {
-          serviceId: service.id,
-          fingerprint,
-          status: {
-            in: [IncidentStatus.TRIGGERED, IncidentStatus.ACKNOWLEDGED],
+    const result = await prisma.$transaction(
+      async (tx: Prisma.TransactionClient) => {
+        // 1. Check for open incident with identical fingerprint on this service
+        const openIncident = await tx.incident.findFirst({
+          where: {
+            serviceId: service.id,
+            fingerprint,
+            status: {
+              in: [IncidentStatus.TRIGGERED, IncidentStatus.ACKNOWLEDGED],
+            },
           },
-        },
-        orderBy: { createdAt: "desc" },
-      });
-
-      // 2A. Deduplication branch: update existing open incident
-      if (openIncident) {
-        const updatedIncident = await tx.incident.update({
-          where: { id: openIncident.id },
-          data: {
-            alertCount: { increment: 1 },
-            updatedAt: new Date(),
-            ...(alertData.summary ? { summary: alertData.summary } : {}),
-            ...(hasPayload && alertData.payload
-              ? { payload: alertData.payload }
-              : {}),
-          },
+          orderBy: { createdAt: "desc" },
         });
 
-        await tx.incidentLog.create({
-          data: {
-            incidentId: openIncident.id,
-            action: IncidentLogAction.TRIGGERED,
-            message: `Deduplicated alert received (occurrence #${updatedIncident.alertCount})`,
-            metadata: {
-              fingerprint,
-              incomingTitle: alertData.title,
+        // 2A. Deduplication branch: update existing open incident
+        if (openIncident) {
+          const updatedIncident = await tx.incident.update({
+            where: { id: openIncident.id },
+            data: {
+              alertCount: { increment: 1 },
+              updatedAt: new Date(),
+              ...(alertData.summary ? { summary: alertData.summary } : {}),
               ...(hasPayload && alertData.payload
                 ? { payload: alertData.payload }
                 : {}),
+            },
+          });
+
+          await tx.incidentLog.create({
+            data: {
+              incidentId: openIncident.id,
+              action: IncidentLogAction.TRIGGERED,
+              message: `Deduplicated alert received (occurrence #${updatedIncident.alertCount})`,
+              metadata: {
+                fingerprint,
+                incomingTitle: alertData.title,
+                ...(hasPayload && alertData.payload
+                  ? { payload: alertData.payload }
+                  : {}),
+              },
+            },
+          });
+
+          logger.info(
+            {
+              serviceId: service.id,
+              incidentId: openIncident.id,
+              alertCount: updatedIncident.alertCount,
+              fingerprint,
+            },
+            "Deduplicated incoming alert against existing open incident",
+          );
+
+          return {
+            status: "deduplicated" as const,
+            incidentId: updatedIncident.id,
+            alertCount: updatedIncident.alertCount,
+            incident: {
+              id: updatedIncident.id,
+              title: updatedIncident.title,
+              summary: updatedIncident.summary,
+              status: updatedIncident.status,
+              urgency: updatedIncident.urgency,
+              serviceId: updatedIncident.serviceId,
+              fingerprint: updatedIncident.fingerprint,
+              alertCount: updatedIncident.alertCount,
+              escalationStep: updatedIncident.escalationStep,
+              createdAt: updatedIncident.createdAt.toISOString(),
+              updatedAt: updatedIncident.updatedAt.toISOString(),
+            },
+          };
+        }
+
+        // 2B. Fresh incident branch: create new TRIGGERED incident
+        const newIncident = await tx.incident.create({
+          data: {
+            title: alertData.title,
+            summary: alertData.summary,
+            status: IncidentStatus.TRIGGERED,
+            urgency,
+            serviceId: service.id,
+            fingerprint,
+            alertCount: 1,
+            escalationStep: 1,
+            ...(hasPayload && alertData.payload
+              ? { payload: alertData.payload }
+              : {}),
+            logs: {
+              create: {
+                action: IncidentLogAction.TRIGGERED,
+                message: `Alert triggered: ${alertData.title}`,
+                metadata: {
+                  fingerprint,
+                  ...(hasPayload && alertData.payload
+                    ? { payload: alertData.payload }
+                    : {}),
+                },
+              },
             },
           },
         });
@@ -93,90 +154,48 @@ export class AlertIngestionService {
         logger.info(
           {
             serviceId: service.id,
-            incidentId: openIncident.id,
-            alertCount: updatedIncident.alertCount,
+            incidentId: newIncident.id,
             fingerprint,
           },
-          "Deduplicated incoming alert against existing open incident",
+          "Created new TRIGGERED incident from incoming webhook",
         );
 
         return {
-          status: "deduplicated" as const,
-          incidentId: updatedIncident.id,
-          alertCount: updatedIncident.alertCount,
+          status: "created" as const,
+          incidentId: newIncident.id,
+          alertCount: 1,
           incident: {
-            id: updatedIncident.id,
-            title: updatedIncident.title,
-            summary: updatedIncident.summary,
-            status: updatedIncident.status,
-            urgency: updatedIncident.urgency,
-            serviceId: updatedIncident.serviceId,
-            fingerprint: updatedIncident.fingerprint,
-            alertCount: updatedIncident.alertCount,
-            escalationStep: updatedIncident.escalationStep,
-            createdAt: updatedIncident.createdAt.toISOString(),
-            updatedAt: updatedIncident.updatedAt.toISOString(),
+            id: newIncident.id,
+            title: newIncident.title,
+            summary: newIncident.summary,
+            status: newIncident.status,
+            urgency: newIncident.urgency,
+            serviceId: newIncident.serviceId,
+            fingerprint: newIncident.fingerprint,
+            alertCount: 1,
+            escalationStep: 1,
+            createdAt: newIncident.createdAt.toISOString(),
+            updatedAt: newIncident.updatedAt.toISOString(),
           },
         };
-      }
+      },
+    );
 
-      // 2B. Fresh incident branch: create new TRIGGERED incident
-      const newIncident = await tx.incident.create({
-        data: {
-          title: alertData.title,
-          summary: alertData.summary,
-          status: IncidentStatus.TRIGGERED,
-          urgency,
-          serviceId: service.id,
-          fingerprint,
-          alertCount: 1,
-          escalationStep: 1,
-          ...(hasPayload && alertData.payload
-            ? { payload: alertData.payload }
-            : {}),
-          logs: {
-            create: {
-              action: IncidentLogAction.TRIGGERED,
-              message: `Alert triggered: ${alertData.title}`,
-              metadata: {
-                fingerprint,
-                ...(hasPayload && alertData.payload
-                  ? { payload: alertData.payload }
-                  : {}),
-              },
-            },
-          },
-        },
+    // 3. If a new incident was created, trigger escalation engine asynchronously
+    if (result.status === "created") {
+      setImmediate(async () => {
+        try {
+          await escalationService.startEscalationForIncident(result.incidentId);
+        } catch (err) {
+          logger.error(
+            { incidentId: result.incidentId, error: (err as Error).message },
+            "Failed to start escalation for new incident",
+          );
+        }
       });
+    }
 
-      logger.info(
-        {
-          serviceId: service.id,
-          incidentId: newIncident.id,
-          fingerprint,
-        },
-        "Created new TRIGGERED incident from incoming webhook",
-      );
-
-      return {
-        status: "created" as const,
-        incidentId: newIncident.id,
-        alertCount: 1,
-        incident: {
-          id: newIncident.id,
-          title: newIncident.title,
-          summary: newIncident.summary,
-          status: newIncident.status,
-          urgency: newIncident.urgency,
-          serviceId: newIncident.serviceId,
-          fingerprint: newIncident.fingerprint,
-          alertCount: 1,
-          escalationStep: 1,
-          createdAt: newIncident.createdAt.toISOString(),
-          updatedAt: newIncident.updatedAt.toISOString(),
-        },
-      };
-    });
+    return result;
   }
 }
 

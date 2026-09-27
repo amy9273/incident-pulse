@@ -6,6 +6,7 @@ import { errorMiddleware } from "./middlewares/error.middleware.js";
 import { healthRouter } from "./routes/health.routes.js";
 import { authRouter } from "./routes/auth.routes.js";
 import { webhookRouter } from "./routes/webhook.routes.js";
+import { incidentRouter } from "./routes/incident.routes.js";
 import { env } from "./config/env.js";
 
 export const createApp = () => {
@@ -31,6 +32,7 @@ export const createApp = () => {
   // 4. API v1 Routes
   app.use("/api/v1/auth", authRouter);
   app.use("/api/v1/webhooks", webhookRouter);
+  app.use("/api/v1/incidents", incidentRouter);
 
   // 5. Root Welcome Route
   app.get("/", (_req, res) => {
