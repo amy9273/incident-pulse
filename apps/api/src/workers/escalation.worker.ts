@@ -2,15 +2,17 @@ import { Worker, Job } from "bullmq";
 import { logger } from "../lib/logger.js";
 import {
   ESCALATION_QUEUE_NAME,
-  EscalationJobData,
+  type EscalationJobData,
   createQueueRedisConnection,
   escalationQueue,
 } from "../lib/queue.js";
 import { escalationService } from "../services/escalation.service.js";
 
-export { ESCALATION_QUEUE_NAME, EscalationJobData, escalationQueue };
+export { ESCALATION_QUEUE_NAME, escalationQueue };
+export type { EscalationJobData };
 
 export const createEscalationWorker = (): Worker<EscalationJobData> => {
+  const connection = createQueueRedisConnection();
   const worker = new Worker<EscalationJobData>(
     ESCALATION_QUEUE_NAME,
     async (job: Job<EscalationJobData>) => {
@@ -29,10 +31,16 @@ export const createEscalationWorker = (): Worker<EscalationJobData> => {
       );
     },
     {
-      connection: createQueueRedisConnection(),
+      connection,
       concurrency: 5,
     },
   );
+
+  const originalClose = worker.close.bind(worker);
+  worker.close = async (force?: boolean) => {
+    await originalClose(force);
+    connection.disconnect();
+  };
 
   worker.on("completed", (job) => {
     logger.info(

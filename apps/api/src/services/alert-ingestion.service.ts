@@ -14,6 +14,8 @@ import { escalationService } from "./escalation.service.js";
 import { incidentService } from "./incident.service.js";
 import { socketEmitter } from "../sockets/socket.emitter.js";
 
+export type IngestionResult = WebhookAlertResponse;
+
 export class AlertIngestionService {
   /**
    * Generates a deterministic SHA-256 fingerprint if not provided by caller.
@@ -51,7 +53,7 @@ export class AlertIngestionService {
 
     const hasPayload = alertData.payload !== undefined;
 
-    const result = await prisma.$transaction(
+    const result: IngestionResult = await prisma.$transaction(
       async (tx: Prisma.TransactionClient) => {
         // 1. Check for open incident with identical fingerprint on this service
         const openIncident = await tx.incident.findFirst({
@@ -185,34 +187,30 @@ export class AlertIngestionService {
 
     // 3. Trigger escalation engine and broadcast WebSocket events
     if (result.status === "created") {
-      setImmediate(async () => {
-        try {
-          await escalationService.startEscalationForIncident(result.incidentId);
-          const incidentDetail = await incidentService.getIncidentById(
-            result.incidentId,
-          );
-          socketEmitter.broadcastIncidentCreated(incidentDetail);
-        } catch (err) {
-          logger.error(
-            { incidentId: result.incidentId, error: (err as Error).message },
-            "Failed to process post-creation escalation or WebSocket broadcast",
-          );
-        }
-      });
+      try {
+        await escalationService.startEscalationForIncident(result.incidentId);
+        const incidentDetail = await incidentService.getIncidentById(
+          result.incidentId,
+        );
+        socketEmitter.broadcastIncidentCreated(incidentDetail);
+      } catch (err) {
+        logger.error(
+          { incidentId: result.incidentId, error: (err as Error).message },
+          "Failed to process post-creation escalation or WebSocket broadcast",
+        );
+      }
     } else if (result.status === "deduplicated") {
-      setImmediate(async () => {
-        try {
-          const incidentDetail = await incidentService.getIncidentById(
-            result.incidentId,
-          );
-          socketEmitter.broadcastIncidentUpdated(incidentDetail);
-        } catch (err) {
-          logger.error(
-            { incidentId: result.incidentId, error: (err as Error).message },
-            "Failed to broadcast deduplicated incident update via WebSockets",
-          );
-        }
-      });
+      try {
+        const incidentDetail = await incidentService.getIncidentById(
+          result.incidentId,
+        );
+        socketEmitter.broadcastIncidentUpdated(incidentDetail);
+      } catch (err) {
+        logger.error(
+          { incidentId: result.incidentId, error: (err as Error).message },
+          "Failed to broadcast deduplicated incident update via WebSockets",
+        );
+      }
     }
 
     return result;

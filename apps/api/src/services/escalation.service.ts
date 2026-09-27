@@ -145,7 +145,7 @@ export class EscalationService {
     nextStepNumber: number,
     delayMs: number,
   ): Promise<void> {
-    const jobId = `escalation:${incidentId}:step:${nextStepNumber}`;
+    const jobId = `escalation_${incidentId}_step_${nextStepNumber}`;
 
     await escalationQueue.add(
       "escalate",
@@ -174,132 +174,141 @@ export class EscalationService {
     incidentId: string,
     targetStepNumber: number,
   ): Promise<void> {
-    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      // 1. Re-query incident state
-      const incident = await tx.incident.findUnique({
-        where: { id: incidentId },
-        include: {
-          service: {
-            include: {
-              escalationPolicy: {
-                include: {
-                  rules: {
-                    orderBy: { stepNumber: "asc" },
+    const nextStepToSchedule = await prisma.$transaction(
+      async (tx: Prisma.TransactionClient) => {
+        // 1. Re-query incident state
+        const incident = await tx.incident.findUnique({
+          where: { id: incidentId },
+          include: {
+            service: {
+              include: {
+                escalationPolicy: {
+                  include: {
+                    rules: {
+                      orderBy: { stepNumber: "asc" },
+                    },
                   },
                 },
               },
             },
           },
-        },
-      });
-
-      // 2. If incident was already acknowledged or resolved, abort escalation
-      if (!incident || incident.status !== IncidentStatus.TRIGGERED) {
-        logger.info(
-          { incidentId, status: incident?.status },
-          "Escalation aborted: Incident is no longer in TRIGGERED status",
-        );
-        return;
-      }
-
-      const rules = incident.service.escalationPolicy
-        .rules as EscalationRuleRecord[];
-      const targetRule = rules.find(
-        (r: EscalationRuleRecord) => r.stepNumber === targetStepNumber,
-      );
-
-      if (!targetRule) {
-        logger.info(
-          { incidentId, targetStepNumber },
-          "Escalation completed: Reached max policy tier",
-        );
-        return;
-      }
-
-      // 3. Resolve target user for this step
-      const targetUser = await this.resolveTarget(targetRule);
-
-      // 4. Update incident status and escalationStep
-      const updatedIncident = await tx.incident.update({
-        where: { id: incident.id },
-        data: {
-          escalationStep: targetStepNumber,
-          assigneeId: targetUser?.id ?? incident.assigneeId,
-        },
-        include: {
-          service: { select: { id: true, name: true } },
-          assignee: { select: { id: true, name: true, email: true } },
-        },
-      });
-
-      // 5. Append immutable IncidentLog
-      await tx.incidentLog.create({
-        data: {
-          incidentId: incident.id,
-          action: IncidentLogAction.ESCALATED,
-          message: `Auto-escalated to Tier ${targetStepNumber}${targetUser ? ` (${targetUser.name})` : ""}`,
-          actorId: targetUser?.id ?? null,
-          metadata: {
-            previousStep: incident.escalationStep,
-            newStep: targetStepNumber,
-            targetType: targetRule.targetType,
-          },
-        },
-      });
-
-      const incidentDetail: IncidentDetail = {
-        id: updatedIncident.id,
-        title: updatedIncident.title,
-        summary: updatedIncident.summary,
-        status: updatedIncident.status,
-        urgency: updatedIncident.urgency,
-        serviceId: updatedIncident.serviceId,
-        serviceName: updatedIncident.service.name,
-        assigneeId: updatedIncident.assigneeId,
-        assigneeName: updatedIncident.assignee?.name ?? null,
-        fingerprint: updatedIncident.fingerprint,
-        escalationStep: updatedIncident.escalationStep,
-        alertCount: updatedIncident.alertCount,
-        acknowledgedAt: updatedIncident.acknowledgedAt?.toISOString() ?? null,
-        resolvedAt: updatedIncident.resolvedAt?.toISOString() ?? null,
-        payload: (updatedIncident.payload as Record<string, unknown>) ?? null,
-        createdAt: updatedIncident.createdAt.toISOString(),
-        updatedAt: updatedIncident.updatedAt.toISOString(),
-      };
-
-      // Broadcast real-time escalation event
-      socketEmitter.broadcastIncidentEscalated(incidentDetail);
-
-      logger.warn(
-        {
-          incidentId: updatedIncident.id,
-          newStep: targetStepNumber,
-          assigneeId: updatedIncident.assigneeId,
-        },
-        `🚨 Incident auto-escalated to Step ${targetStepNumber}`,
-      );
-
-      // 6. Schedule next step if available
-      const subsequentRule = rules.find(
-        (r: EscalationRuleRecord) => r.stepNumber === targetStepNumber + 1,
-      );
-
-      if (subsequentRule) {
-        const delaySeconds =
-          env.NODE_ENV === "test"
-            ? env.ESCALATION_DEFAULT_TIMEOUT_SEC
-            : targetRule.delayMinutes * 60;
-
-        // Schedule outside of tx or after tx commits
-        setImmediate(async () => {
-          await this.scheduleEscalationStep(
-            incident.id,
-            targetStepNumber + 1,
-            delaySeconds * 1000,
-          );
         });
-      }
-    });
+
+        // 2. If incident was already acknowledged or resolved, abort escalation
+        if (!incident || incident.status !== IncidentStatus.TRIGGERED) {
+          logger.info(
+            { incidentId, status: incident?.status },
+            "Escalation aborted: Incident is no longer in TRIGGERED status",
+          );
+          return;
+        }
+
+        const rules = incident.service.escalationPolicy
+          .rules as EscalationRuleRecord[];
+        const targetRule = rules.find(
+          (r: EscalationRuleRecord) => r.stepNumber === targetStepNumber,
+        );
+
+        if (!targetRule) {
+          logger.info(
+            { incidentId, targetStepNumber },
+            "Escalation completed: Reached max policy tier",
+          );
+          return;
+        }
+
+        // 3. Resolve target user for this step
+        const targetUser = await this.resolveTarget(targetRule);
+
+        // 4. Update incident status and escalationStep
+        const updatedIncident = await tx.incident.update({
+          where: { id: incident.id },
+          data: {
+            escalationStep: targetStepNumber,
+            assigneeId: targetUser?.id ?? incident.assigneeId,
+          },
+          include: {
+            service: { select: { id: true, name: true } },
+            assignee: { select: { id: true, name: true, email: true } },
+          },
+        });
+
+        // 5. Append immutable IncidentLog
+        await tx.incidentLog.create({
+          data: {
+            incidentId: incident.id,
+            action: IncidentLogAction.ESCALATED,
+            message: `Auto-escalated to Tier ${targetStepNumber}${targetUser ? ` (${targetUser.name})` : ""}`,
+            actorId: targetUser?.id ?? null,
+            metadata: {
+              previousStep: incident.escalationStep,
+              newStep: targetStepNumber,
+              targetType: targetRule.targetType,
+            },
+          },
+        });
+
+        const incidentDetail: IncidentDetail = {
+          id: updatedIncident.id,
+          title: updatedIncident.title,
+          summary: updatedIncident.summary,
+          status: updatedIncident.status,
+          urgency: updatedIncident.urgency,
+          serviceId: updatedIncident.serviceId,
+          serviceName: updatedIncident.service.name,
+          assigneeId: updatedIncident.assigneeId,
+          assigneeName: updatedIncident.assignee?.name ?? null,
+          fingerprint: updatedIncident.fingerprint,
+          escalationStep: updatedIncident.escalationStep,
+          alertCount: updatedIncident.alertCount,
+          acknowledgedAt: updatedIncident.acknowledgedAt?.toISOString() ?? null,
+          resolvedAt: updatedIncident.resolvedAt?.toISOString() ?? null,
+          payload: (updatedIncident.payload as Record<string, unknown>) ?? null,
+          createdAt: updatedIncident.createdAt.toISOString(),
+          updatedAt: updatedIncident.updatedAt.toISOString(),
+        };
+
+        // Broadcast real-time escalation event
+        socketEmitter.broadcastIncidentEscalated(incidentDetail);
+
+        logger.warn(
+          {
+            incidentId: updatedIncident.id,
+            newStep: targetStepNumber,
+            assigneeId: updatedIncident.assigneeId,
+          },
+          `🚨 Incident auto-escalated to Step ${targetStepNumber}`,
+        );
+
+        // 6. Check next step if available
+        const subsequentRule = rules.find(
+          (r: EscalationRuleRecord) => r.stepNumber === targetStepNumber + 1,
+        );
+
+        if (subsequentRule) {
+          const delaySeconds =
+            env.NODE_ENV === "test"
+              ? env.ESCALATION_DEFAULT_TIMEOUT_SEC
+              : targetRule.delayMinutes * 60;
+
+          return {
+            incidentId: incident.id,
+            stepNumber: targetStepNumber + 1,
+            delayMs: delaySeconds * 1000,
+          };
+        }
+
+        return null;
+      },
+    );
+
+    if (nextStepToSchedule) {
+      await this.scheduleEscalationStep(
+        nextStepToSchedule.incidentId,
+        nextStepToSchedule.stepNumber,
+        nextStepToSchedule.delayMs,
+      );
+    }
   }
 
   /**
@@ -307,13 +316,27 @@ export class EscalationService {
    */
   async cancelEscalation(incidentId: string): Promise<void> {
     try {
-      const delayedJobs = await escalationQueue.getDelayed();
+      // 1. Direct removal by deterministic job IDs
+      for (let step = 1; step <= 10; step++) {
+        const jobId = `escalation_${incidentId}_step_${step}`;
+        const job = await escalationQueue.getJob(jobId);
+        if (job) {
+          await job.remove();
+          logger.info(
+            { jobId, incidentId },
+            "🗑️ Removed pending BullMQ escalation timer job",
+          );
+        }
+      }
+
+      // 2. Scan delayed queue for any residual jobs
+      const delayedJobs = await escalationQueue.getDelayed(0, 1000);
       for (const job of delayedJobs) {
-        if (job.data.incidentId === incidentId) {
+        if (job.data?.incidentId === incidentId) {
           await job.remove();
           logger.info(
             { jobId: job.id, incidentId },
-            "🗑️ Removed pending BullMQ escalation timer job",
+            "🗑️ Removed residual BullMQ delayed escalation job",
           );
         }
       }

@@ -110,6 +110,7 @@ flowchart TD
 
 ## 6. Git & Commit Hygiene
 
+- **Sync Upstream First**: Always run `git pull origin main` (or checkout and pull `main`) before cutting a new branch or starting work on a unit.
 - **NEVER Commit to `main` / `master` Directly**:
   - `main` is a protected production branch. Direct commits/pushes are forbidden.
   - Work on short-lived branches: `feat/unit-NN-description`, `fix/description`, `chore/description`.

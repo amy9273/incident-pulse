@@ -26,6 +26,7 @@ These rules govern how AI coding agents must operate while building and modifyin
 
 ## 3. Scoping & Execution Discipline
 
+- **Always Sync Upstream First**: Before starting any new unit or creating a feature branch, pull the latest changes from the primary branch (`git pull origin main` or `git checkout main; git pull origin main`) to ensure your baseline is up-to-date.
 - **One Unit at a Time**: Work on a single, isolated unit per prompt cycle. Complete and verify it before moving to the next.
 - **Never commit to `main` or `master`**: AI agents must **NEVER** commit or push directly to `main` or `master`. Always verify that work is isolated to a feature branch (`feat/unit-NN-description`).
 - **Never bypass errors**: If a TypeScript or compilation error occurs, fix the root cause. Never cast to `any` or suppress linter errors with `@ts-ignore`.
@@ -48,26 +49,39 @@ AI agents must proactively follow these architectural rules to prevent IDE langu
    - Always explicitly type transaction parameters: `(tx: Prisma.TransactionClient) => ...`.
 3. **Explicit Callback & Lambda Parameter Typing**:
    - Always provide explicit parameter types for all `.map()`, `.filter()`, `.find()`, and array callbacks (e.g., `(inc: IncidentWithRelations) => ...`, `(log: IncidentLogEntry) => ...`) to prevent `noImplicitAny` IDE errors.
-4. **Mandatory Automated Type & Lint Verification Loop**:
-   - Run `npm run typecheck` (`tsc --noEmit`) across all workspaces and `npm run lint` on every code iteration before committing or requesting review.
+4. **Mandatory Automated Code Quality & Style Verification Loop**:
+   - **Formatting (Prettier)**: Run `npx prettier --check "apps/**/*.{ts,tsx,js,json,md}"` (or `npm run format` / `npx prettier --write ...` to fix) on every iteration. Zero style warnings permitted.
+   - **Strict Typecheck**: Run `npm run typecheck --workspaces` (`tsc --noEmit`) across all workspaces. Zero compiler errors permitted.
+   - **Linting**: Run `npm run lint --workspaces` (`eslint .`). Zero linter warnings/errors permitted.
+   - **Test Suites**: Run relevant unit/integration tests to ensure regressions are caught early.
 
 ---
 
-## 5. Quality Gate & CI/CD Verification Before Closing
+## 5. Background Task & Process Lifecycle Management
+
+- **No Orphaned Background Tasks**: When executing tests, dev servers, or long-running scripts, actively track all background task IDs.
+- **Mandatory Kill on Completion/Teardown**: If a task finishes its job, times out, hangs, or is superseded, immediately terminate it via `manage_task(Action='kill')` to prevent memory leaks, open database/Redis socket leaks, or orphaned Node processes.
+- **Active Verification**: Before ending any turn or concluding a unit, inspect running background tasks (`manage_task(Action='list')`) and kill any non-daemon processes that should not be lingering.
+
+---
+
+## 6. Quality Gate & CI/CD Verification Before Closing
 
 Before marking any unit complete in `context/progress-tracker.md`, run and verify:
 
 - [ ] Working on a feature branch (`feat/unit-NN-...`), NEVER directly on `main` or `master`.
-- [ ] TypeScript compilation passes with zero errors (`tsc --noEmit`).
-- [ ] Linter & formatter pass with zero warnings (`eslint .`, `prettier --check .`).
-- [ ] Unit/Integration tests pass against the test database.
+- [ ] Prettier formatting check passes (`npx prettier --check "apps/**/*.{ts,tsx,js,json,md}"`).
+- [ ] TypeScript compilation passes with zero errors (`npm run typecheck --workspaces`).
+- [ ] Linter passes with zero warnings (`npm run lint --workspaces`).
+- [ ] Unit/Integration tests pass cleanly with all handles and background tasks terminated.
 - [ ] Component meets the 4-state UI rule and uses tokens from `ui-context.md`.
 - [ ] Clean diff verified (`git diff` has no leftover `console.log`, debugger, or commented-out code).
 - [ ] No hardcoded secrets, API keys, or localhost URLs committed.
+- [ ] Zero lingering background tasks (`manage_task(Action='list')` is clean).
 
 ---
 
-## 6. Handling Missing or Ambiguous Requirements
+## 7. Handling Missing or Ambiguous Requirements
 
 If an edge case or requirement is not defined in the spec:
 

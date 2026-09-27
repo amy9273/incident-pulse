@@ -14,7 +14,10 @@ Read the following files in order before implementing or making any architectura
 
 ### Operating Rules
 
+- **Sync Upstream First**: Before starting any new unit or task, always pull latest changes from the primary branch (`git pull origin main` or sync `main` before branching).
 - Update `context/progress-tracker.md` after each meaningful implementation change.
 - Work strictly against the current unit spec in `context/specs/`.
 - If implementation changes architecture, scope, or standards, update the relevant context file before continuing.
 - Never violate the architectural invariants documented in `context/architecture.md` or best practices in `context/engineering-best-practices.md`.
+- **Mandatory Quality Check Loop**: Run Prettier check (`npx prettier --check "apps/**/*.{ts,tsx,js,json,md}"` or `npm run format`), typecheck (`npm run typecheck --workspaces`), and lint before creating commits.
+- **Process & Task Lifecycle**: Never leave background tasks hanging or accumulating; immediately terminate/kill finished or orphaned background tasks (`manage_task(Action='kill')`).
