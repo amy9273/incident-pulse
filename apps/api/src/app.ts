@@ -7,6 +7,8 @@ import { healthRouter } from "./routes/health.routes.js";
 import { authRouter } from "./routes/auth.routes.js";
 import { webhookRouter } from "./routes/webhook.routes.js";
 import { incidentRouter } from "./routes/incident.routes.js";
+import { scheduleRouter } from "./routes/schedule.routes.js";
+import { userRouter } from "./routes/user.routes.js";
 import { env } from "./config/env.js";
 
 export const createApp = () => {
@@ -33,6 +35,8 @@ export const createApp = () => {
   app.use("/api/v1/auth", authRouter);
   app.use("/api/v1/webhooks", webhookRouter);
   app.use("/api/v1/incidents", incidentRouter);
+  app.use("/api/v1/schedules", scheduleRouter);
+  app.use("/api/v1/users", userRouter);
 
   // 5. Root Welcome Route
   app.get("/", (_req, res) => {

@@ -1,116 +1,223 @@
 "use client";
 
 import * as React from "react";
-import { Calendar, Users, Clock, Plus } from "lucide-react";
 import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/components/ui/Card";
+  Calendar,
+  Clock,
+  Plus,
+  RefreshCw,
+  Users,
+  Shield,
+  Layers,
+} from "lucide-react";
+import {
+  useSchedules,
+  useSchedule,
+  useDeleteShift,
+} from "@/hooks/useSchedules";
 import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { ActiveOnCallSummary } from "@/components/schedules/ActiveOnCallSummary";
+import { ScheduleTimeline } from "@/components/schedules/ScheduleTimeline";
+import { CreateShiftModal } from "@/components/schedules/CreateShiftModal";
+import { CreateScheduleModal } from "@/components/schedules/CreateScheduleModal";
 
 export default function SchedulesPage() {
+  const {
+    data: schedules,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    isFetching,
+  } = useSchedules();
+
+  const [selectedScheduleId, setSelectedScheduleId] = React.useState<
+    string | null
+  >(null);
+  const [isShiftModalOpen, setIsShiftModalOpen] = React.useState(false);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = React.useState(false);
+
+  const deleteShiftMutation = useDeleteShift();
+
+  // Set default selected schedule once loaded
+  React.useEffect(() => {
+    if (schedules && schedules.length > 0 && !selectedScheduleId) {
+      setSelectedScheduleId(schedules[0]!.id);
+    }
+  }, [schedules, selectedScheduleId]);
+
+  const { data: activeScheduleData } = useSchedule(selectedScheduleId);
+
+  const activeSchedule =
+    activeScheduleData ||
+    schedules?.find((s) => s.id === selectedScheduleId) ||
+    null;
+
+  const handleDeleteShift = (shiftId: string) => {
+    if (selectedScheduleId) {
+      deleteShiftMutation.mutate({
+        scheduleId: selectedScheduleId,
+        shiftId,
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* Top Banner & Actions */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-xl font-bold tracking-tight text-foreground">
+          <h2 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
             On-Call Rotations & Schedules
+            {isFetching && !isLoading && (
+              <RefreshCw className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+            )}
           </h2>
           <p className="text-xs text-muted-foreground">
-            Visual calendar shift scheduler and escalation tier assignees.
+            Manage weekly shift rotations, coverage timelines, and active
+            incident responders.
           </p>
         </div>
 
-        <Button size="sm">
-          <Plus className="mr-1.5 h-4 w-4" /> Create Schedule
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5 text-xs"
+            onClick={() => refetch()}
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Refresh
+          </Button>
+
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5 text-xs"
+            onClick={() => setIsScheduleModalOpen(true)}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            New Schedule
+          </Button>
+
+          {activeSchedule && (
+            <Button
+              size="sm"
+              className="gap-1.5 text-xs"
+              onClick={() => setIsShiftModalOpen(true)}
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add Shift
+            </Button>
+          )}
+        </div>
       </div>
 
-      {/* Active On-Call Summary */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-semibold">
-                Core Payments Rotation
-              </CardTitle>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                Active Shift
-              </span>
-            </div>
-            <CardDescription className="text-xs">
-              Weekly primary on-call rotation for checkout and payment
-              microservices.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 pt-0">
-            <div className="flex items-center justify-between rounded-md bg-secondary/50 p-3 text-xs">
-              <div className="space-y-0.5">
-                <span className="font-semibold text-foreground">
-                  Current Primary (Tier 1)
-                </span>
-                <p className="text-muted-foreground">
-                  Sarah Chen (sarah.chen@incidentpulse.io)
-                </p>
-              </div>
-              <span className="text-[11px] font-medium text-muted-foreground">
-                Ends Sun 23:59 UTC
-              </span>
-            </div>
-          </CardContent>
-        </Card>
+      {/* 4-State UI Handling */}
+      {isLoading && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="p-5 space-y-3">
+                <Skeleton className="h-5 w-3/4" />
+                <Skeleton className="h-16 w-full rounded-md" />
+                <Skeleton className="h-4 w-1/2" />
+              </Card>
+            ))}
+          </div>
+          <Card className="p-6">
+            <Skeleton className="h-64 w-full rounded-lg" />
+          </Card>
+        </div>
+      )}
 
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-semibold">
-                Platform Infrastructure
-              </CardTitle>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                Active Shift
-              </span>
-            </div>
-            <CardDescription className="text-xs">
-              Infrastructure, Kubernetes clusters, and database cluster
-              rotations.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 pt-0">
-            <div className="flex items-center justify-between rounded-md bg-secondary/50 p-3 text-xs">
-              <div className="space-y-0.5">
-                <span className="font-semibold text-foreground">
-                  Current Primary (Tier 1)
-                </span>
-                <p className="text-muted-foreground">
-                  Alex Kumar (alex.kumar@incidentpulse.io)
-                </p>
-              </div>
-              <span className="text-[11px] font-medium text-muted-foreground">
-                Ends Wed 12:00 UTC
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {isError && (
+        <ErrorState
+          title="Failed to load on-call schedules"
+          message={
+            error instanceof Error
+              ? error.message
+              : "Could not connect to the backend API. Please ensure the Express server is running."
+          }
+          onRetry={() => refetch()}
+        />
+      )}
 
-      {/* Calendar Area */}
-      <Card className="p-6">
+      {!isLoading && !isError && (!schedules || schedules.length === 0) && (
         <EmptyState
           icon={Calendar}
-          title="Interactive Schedule Calendar (Unit 09)"
-          description="Drag-and-drop rotation builder with multi-tier overrides and shift coverage timelines will be implemented in Unit 09."
-          actionLabel="View Active Shifts"
-          onAction={() =>
-            alert("Scheduled for Unit 09: Visual On-Call Schedule Builder")
-          }
+          title="No on-call schedules configured"
+          description="Create your first team on-call rotation to start automatically assigning triggered incident alerts."
+          actionLabel="Create First Schedule"
+          onAction={() => setIsScheduleModalOpen(true)}
         />
-      </Card>
+      )}
+
+      {!isLoading && !isError && schedules && schedules.length > 0 && (
+        <div className="space-y-6">
+          {/* Active On-Call Summary Banner */}
+          <div className="space-y-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Current Active On-Call Coverage
+            </h3>
+            <ActiveOnCallSummary schedules={schedules} />
+          </div>
+
+          {/* Schedule Selector Tabs */}
+          <div className="flex flex-wrap items-center gap-2 border-b border-border pb-3">
+            <span className="text-xs font-semibold text-muted-foreground pr-2">
+              Select Rotation:
+            </span>
+            {schedules.map((sch) => {
+              const isSelected = sch.id === selectedScheduleId;
+              return (
+                <button
+                  key={sch.id}
+                  onClick={() => setSelectedScheduleId(sch.id)}
+                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                    isSelected
+                      ? "bg-primary text-primary-foreground font-semibold shadow-xs"
+                      : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                  }`}
+                >
+                  {sch.name}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Visual Timeline for Active Schedule */}
+          {activeSchedule && (
+            <Card className="p-6 shadow-sm">
+              <ScheduleTimeline
+                schedule={activeSchedule}
+                onAddShiftClick={() => setIsShiftModalOpen(true)}
+                onDeleteShift={handleDeleteShift}
+                isDeletingShift={deleteShiftMutation.isPending}
+              />
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* Modals */}
+      {selectedScheduleId && (
+        <CreateShiftModal
+          scheduleId={selectedScheduleId}
+          isOpen={isShiftModalOpen}
+          onClose={() => setIsShiftModalOpen(false)}
+        />
+      )}
+
+      <CreateScheduleModal
+        isOpen={isScheduleModalOpen}
+        onClose={() => setIsScheduleModalOpen(false)}
+        onScheduleCreated={(newId) => setSelectedScheduleId(newId)}
+      />
     </div>
   );
 }

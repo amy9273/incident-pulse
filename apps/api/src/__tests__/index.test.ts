@@ -10,6 +10,7 @@ import "./auth.test.js";
 import "./webhook.test.js";
 import "./escalation.test.js";
 import "./socket.test.js";
+import "./schedule.test.js";
 
 // Global teardown to cleanly close all persistent singleton connections
 after(async () => {
