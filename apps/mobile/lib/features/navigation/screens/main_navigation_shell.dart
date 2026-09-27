@@ -436,10 +436,7 @@ class _SchedulesTab extends ConsumerWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'On-Call Coverage',
-                  style: AppTypography.headlineMedium,
-                ),
+                Text('On-Call Coverage', style: AppTypography.headlineMedium),
                 const SizedBox(height: 2),
                 Text(
                   'Active shift rotations & escalation routing',
@@ -567,11 +564,7 @@ class _SchedulesTab extends ConsumerWidget {
                 // Timing & Timezone
                 Row(
                   children: [
-                    Icon(
-                      Icons.schedule,
-                      size: 16,
-                      color: colors.textSecondary,
-                    ),
+                    Icon(Icons.schedule, size: 16, color: colors.textSecondary),
                     const SizedBox(width: 6),
                     Text(
                       'Mon 09:00 - Mon 09:00 (UTC)',
