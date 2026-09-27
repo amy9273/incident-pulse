@@ -46,7 +46,6 @@ describe("BullMQ Escalation State Machine Worker (Unit 05)", () => {
   after(async () => {
     await worker.close();
     await escalationQueue.close();
-    await prisma.$disconnect();
   });
 
   describe("Incident Triage Endpoints", () => {
