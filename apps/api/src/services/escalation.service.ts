@@ -7,12 +7,22 @@ import {
 import { prisma } from "../lib/prisma.js";
 import { logger } from "../lib/logger.js";
 import { env } from "../config/env.js";
-import { escalationQueue } from "../workers/escalation.worker.js";
+import { escalationQueue } from "../lib/queue.js";
 
 export interface TargetRuleConfig {
   targetType: EscalationTargetType;
   targetUserId?: string | null;
   targetScheduleId?: string | null;
+}
+
+export interface EscalationRuleRecord {
+  id: string;
+  escalationPolicyId: string;
+  stepNumber: number;
+  delayMinutes: number;
+  targetType: EscalationTargetType;
+  targetUserId: string | null;
+  targetScheduleId: string | null;
 }
 
 export class EscalationService {
@@ -190,8 +200,11 @@ export class EscalationService {
         return;
       }
 
-      const rules = incident.service.escalationPolicy.rules;
-      const targetRule = rules.find((r) => r.stepNumber === targetStepNumber);
+      const rules = incident.service.escalationPolicy
+        .rules as EscalationRuleRecord[];
+      const targetRule = rules.find(
+        (r: EscalationRuleRecord) => r.stepNumber === targetStepNumber,
+      );
 
       if (!targetRule) {
         logger.info(
@@ -239,7 +252,7 @@ export class EscalationService {
 
       // 6. Schedule next step if available
       const subsequentRule = rules.find(
-        (r) => r.stepNumber === targetStepNumber + 1,
+        (r: EscalationRuleRecord) => r.stepNumber === targetStepNumber + 1,
       );
 
       if (subsequentRule) {

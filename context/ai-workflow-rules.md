@@ -35,7 +35,25 @@ These rules govern how AI coding agents must operate while building and modifyin
 
 ---
 
-## 4. Quality Gate & CI/CD Verification Before Closing
+## 4. Proactive IDE & Type Error Prevention Protocol
+
+AI agents must proactively follow these architectural rules to prevent IDE language server and TypeScript resolution errors:
+
+1. **Zero Circular Dependencies**:
+   - Never create circular imports between `workers/`, `services/`, and `controllers/`.
+   - Always place shared queues, instances, and configurations in dedicated leaf modules in `src/lib/` (e.g. `src/lib/queue.ts`, `src/lib/prisma.ts`, `src/lib/redis.ts`).
+2. **Prisma Type Isolation & Clean JSON Handling**:
+   - Never rely on unstable or unexported internal Prisma namespace types (e.g., `Prisma.JsonValue`, `Prisma.InputJsonValue`, `Prisma.InputJsonObject`, `Prisma.DbNull`).
+   - Use clean, standard TypeScript types (`Record<string, unknown>`, `unknown`, or concrete DTO interfaces) for JSON columns.
+   - Always explicitly type transaction parameters: `(tx: Prisma.TransactionClient) => ...`.
+3. **Explicit Callback & Lambda Parameter Typing**:
+   - Always provide explicit parameter types for all `.map()`, `.filter()`, `.find()`, and array callbacks (e.g., `(inc: IncidentWithRelations) => ...`, `(log: IncidentLogEntry) => ...`) to prevent `noImplicitAny` IDE errors.
+4. **Mandatory Automated Type & Lint Verification Loop**:
+   - Run `npm run typecheck` (`tsc --noEmit`) across all workspaces and `npm run lint` on every code iteration before committing or requesting review.
+
+---
+
+## 5. Quality Gate & CI/CD Verification Before Closing
 
 Before marking any unit complete in `context/progress-tracker.md`, run and verify:
 
@@ -49,7 +67,7 @@ Before marking any unit complete in `context/progress-tracker.md`, run and verif
 
 ---
 
-## 5. Handling Missing or Ambiguous Requirements
+## 6. Handling Missing or Ambiguous Requirements
 
 If an edge case or requirement is not defined in the spec:
 

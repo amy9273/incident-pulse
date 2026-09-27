@@ -25,7 +25,7 @@ type IncidentWithRelations = {
   alertCount: number;
   acknowledgedAt: Date | null;
   resolvedAt: Date | null;
-  payload: Prisma.JsonValue | null;
+  payload: unknown;
   createdAt: Date;
   updatedAt: Date;
   service: { id: string; name: string };
@@ -38,7 +38,7 @@ type IncidentLogWithMeta = {
   actorId: string | null;
   action: IncidentLogAction;
   message: string;
-  metadata: Prisma.JsonValue | null;
+  metadata: unknown;
   createdAt: Date;
 };
 

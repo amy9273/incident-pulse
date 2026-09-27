@@ -1,36 +1,14 @@
-import { Queue, Worker, Job } from "bullmq";
-import { Redis } from "ioredis";
-import { env } from "../config/env.js";
+import { Worker, Job } from "bullmq";
 import { logger } from "../lib/logger.js";
+import {
+  ESCALATION_QUEUE_NAME,
+  EscalationJobData,
+  createQueueRedisConnection,
+  escalationQueue,
+} from "../lib/queue.js";
 import { escalationService } from "../services/escalation.service.js";
 
-export const ESCALATION_QUEUE_NAME = "escalation-queue";
-
-export interface EscalationJobData {
-  incidentId: string;
-  nextStepNumber: number;
-  escalationPolicyId?: string;
-}
-
-// Dedicated BullMQ Redis connection
-const createRedisConnection = () => {
-  return new Redis(env.REDIS_URL, {
-    maxRetriesPerRequest: null,
-    enableReadyCheck: false,
-    lazyConnect: true,
-  });
-};
-
-export const escalationQueue = new Queue<EscalationJobData>(
-  ESCALATION_QUEUE_NAME,
-  {
-    connection: createRedisConnection(),
-    defaultJobOptions: {
-      removeOnComplete: true,
-      removeOnFail: false,
-    },
-  },
-);
+export { ESCALATION_QUEUE_NAME, EscalationJobData, escalationQueue };
 
 export const createEscalationWorker = (): Worker<EscalationJobData> => {
   const worker = new Worker<EscalationJobData>(
@@ -51,7 +29,7 @@ export const createEscalationWorker = (): Worker<EscalationJobData> => {
       );
     },
     {
-      connection: createRedisConnection(),
+      connection: createQueueRedisConnection(),
       concurrency: 5,
     },
   );

@@ -2,6 +2,7 @@
   "name": "incident-pulse-monorepo",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "Open-Source Incident Response & On-Call Dispatch Platform",
   "workspaces": [
     "apps/*",
