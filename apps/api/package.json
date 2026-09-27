@@ -9,7 +9,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test src/__tests__/**/*.test.ts",
+    "test": "node --import tsx --test",
     "lint": "eslint src --ext .ts"
   },
   "dependencies": {
