@@ -6,9 +6,8 @@ _Update this file after every meaningful implementation step or architectural de
 
 ## Current Phase
 
-- **Phase 3: Flutter Mobile Responder App (Units 11-13)**
-  - Completed: **Unit 11: Flutter Scaffold & Design System**
-  - In Progress: **Unit 12: Offline Incident Cache (SQLite & Transactional Outbox Pattern)**
+- **Phase 4: Production Polish & Portfolio Presentation (Units 14-15)**
+  - Next Up: **Unit 14: Automated Testing & CI/CD Pipeline**
 
 ---
 
@@ -28,12 +27,13 @@ _Update this file after every meaningful implementation step or architectural de
 - [x] **Unit 10: Service & Webhook Integration Manager**: Implemented monitored service registry, dynamic API key rotation, copyable cURL/Prometheus/Datadog/Node.js webhook integration snippets, multi-tier escalation policy bindings, slide-over testing console with live simulated alert runner and instant feedback, and 100% passing test suites across all 70 test cases.
 - [x] **Unit 11: Flutter Scaffold & Design System**: Scaffolded Flutter Clean Architecture application in `apps/mobile` with Riverpod state management, Dio HTTP client with JWT interceptor, secure Keychain/Keystore token storage, Material 3 theme matching `ui-context.md` (Deep Obsidian dark mode `#0B0F19`, light mode `#F8FAFC`, and status tokens), 4-state UI widgets (`SkeletonWidget`, `EmptyStateWidget`, `ErrorStateWidget`, `StatusBadgeWidget` with pulsing beacon, `PrimaryButton` with 56dp touch height), high-contrast login screen with 1-tap demo profile quick-select, authenticated bottom navigation shell with active triage cards, and 100% passing tests and zero analyzer issues.
 - [x] **Unit 12: Offline Incident Cache (SQLite & Transactional Outbox Pattern)**: Implemented local SQLite persistence layer (`AppDatabase`, `IncidentTable`, `OutboxTable`) supporting native mobile and desktop FFI test runners, transactional outbox pattern (Invariants #5 & #7) with UUIDv4 primary keys and atomic status updates (< 16ms optimistic UI latency), `OutboxSyncService` background queue drainer with retry tracking, local-first `IncidentRepositoryImpl` with offline fallback, `SyncStatusBanner`, `IncidentCardWidget` with offline queued badge and 1-tap actions, 100% passing tests (9/9), clean dart format, zero analyzer issues, and clean Prettier verification.
+- [x] **Unit 13: Emergency 1-Tap Triage UI & Push Handling**: Implemented high-contrast `IncidentDetailScreen` with 56dp fat-finger triage triggers (Acknowledge & Resolve) and ergonomic haptic feedback patterns, `EmergencyAlertBanner` heads-up notification overlay for 1-tap triage directly from banners, `PushNotificationService` supporting FCM/APNs remote notification payload parsing and simulation, `SocketService` real-time WebSocket client synchronization with backend, `RawPayloadViewerWidget` and `IncidentAuditTimelineWidget`, 100% passing tests (18/18), zero analyzer warnings, and clean Prettier verification.
 
 ---
 
 ## Next Up
 
-- [ ] Unit 13: Emergency 1-Tap Triage UI & Push Handling.
+- [ ] Unit 14: Automated Testing & CI/CD Pipeline.
 
 ---
 
