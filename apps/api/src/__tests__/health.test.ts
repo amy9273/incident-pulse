@@ -30,4 +30,22 @@ describe("Health & Status Probes (Unit 01 / Unit 02)", () => {
     assert.ok(typeof res.body.checks.database.latencyMs === "number");
     assert.ok(typeof res.body.checks.redis.latencyMs === "number");
   });
+
+  it("GET /api/v1/docs/openapi.json returns valid OpenAPI 3.0 specification", async () => {
+    const res = await request(app).get("/api/v1/docs/openapi.json");
+    assert.strictEqual(res.status, 200);
+    assert.ok(res.headers["content-type"]?.includes("application/json"));
+    assert.strictEqual(res.body.openapi, "3.0.3");
+    assert.strictEqual(res.body.info.title, "IncidentPulse API");
+    assert.ok(res.body.paths["/api/v1/webhooks/services/{serviceKey}"]);
+    assert.ok(res.body.paths["/api/v1/incidents/{id}/acknowledge"]);
+  });
+
+  it("GET /api/v1/docs returns interactive Swagger UI HTML", async () => {
+    const res = await request(app).get("/api/v1/docs");
+    assert.strictEqual(res.status, 200);
+    assert.ok(res.headers["content-type"]?.includes("text/html"));
+    assert.ok(res.text.includes("IncidentPulse API Explorer"));
+    assert.ok(res.text.includes("SwaggerUIBundle"));
+  });
 });

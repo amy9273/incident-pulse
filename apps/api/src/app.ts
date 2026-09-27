@@ -11,6 +11,7 @@ import { scheduleRouter } from "./routes/schedule.routes.js";
 import { userRouter } from "./routes/user.routes.js";
 import { serviceRouter } from "./routes/service.routes.js";
 import { escalationPolicyRouter } from "./routes/escalation-policy.routes.js";
+import { docsRouter } from "./routes/docs.routes.js";
 import { env } from "./config/env.js";
 
 export const createApp = () => {
@@ -41,6 +42,7 @@ export const createApp = () => {
   app.use("/api/v1/users", userRouter);
   app.use("/api/v1/services", serviceRouter);
   app.use("/api/v1/escalation-policies", escalationPolicyRouter);
+  app.use("/api/v1/docs", docsRouter);
 
   // 5. Root Welcome Route
   app.get("/", (_req, res) => {
