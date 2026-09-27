@@ -15,7 +15,7 @@ jobs:
   # Job 1: Linting, Formatting, & Static Typing
   # -------------------------------------------------------------
   lint-and-typecheck:
-    name: Lint & Typecheck (API & Web)
+    name: Lint & Typecheck (Monorepo)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -40,21 +40,13 @@ jobs:
           fi
 
       - name: Check code formatting (Prettier)
-        run: npx prettier --check "apps/**/*.{ts,tsx,js,json,md}"
+        run: npm run format:check
 
       - name: Run ESLint
-        run: npm run lint --workspaces --if-present
+        run: npm run lint
 
-      - name: Typecheck Backend API
-        run: npm run typecheck --workspace=apps/api --if-present
-
-      - name: Typecheck Web Frontend
-        run: |
-          if [ -d "apps/web" ]; then
-            npm run typecheck --workspace=apps/web --if-present
-          else
-            echo "apps/web not scaffolded yet (Phase 2), skipping."
-          fi
+      - name: Typecheck TypeScript Workspaces
+        run: npm run typecheck
 
   # -------------------------------------------------------------
   # Job 2: Backend Integration Tests with DB Services
@@ -115,16 +107,14 @@ jobs:
             npx prisma generate --schema=apps/api/prisma/schema.prisma
           fi
 
-      - name: Run Prisma Migrations
+      - name: Run Prisma Schema Push
         run: |
           if [ -f "apps/api/prisma/schema.prisma" ]; then
-            npm run db:migrate:test --workspace=apps/api --if-present
-          else
-            echo "Prisma schema not created yet (Unit 02), skipping."
+            npm run db:migrate:test --workspace=apps/api
           fi
 
-      - name: Execute API Tests
-        run: npm run test --workspace=apps/api --if-present
+      - name: Execute API Integration Tests (70 tests)
+        run: npm run test --workspace=apps/api
 
   # -------------------------------------------------------------
   # Job 3: Next.js Production Build Verification
@@ -149,20 +139,15 @@ jobs:
         run: npm run build:shared --if-present
 
       - name: Build Next.js Application
-        run: |
-          if [ -d "apps/web" ]; then
-            npm run build --workspace=apps/web --if-present
-          else
-            echo "apps/web not scaffolded yet (Phase 2), skipping."
-          fi
+        run: npm run build --workspace=apps/web
         env:
           NEXT_PUBLIC_API_URL: "http://localhost:5000"
 
   # -------------------------------------------------------------
   # Job 4: Flutter Mobile Quality Gate
   # -------------------------------------------------------------
-  analyze-mobile:
-    name: Flutter Lint & Static Analysis
+  mobile-quality-gate:
+    name: Flutter Mobile Quality Gate (Analyze & Test)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -174,7 +159,7 @@ jobs:
           distribution: "temurin"
           java-version: "17"
 
-      - name: Setup Flutter
+      - name: Setup Flutter SDK (Stable)
         uses: subosito/flutter-action@v2
         with:
           channel: "stable"
@@ -183,14 +168,39 @@ jobs:
       - name: Install Flutter Dependencies
         working-directory: ./apps/mobile
         run: flutter pub get
-        continue-on-error: true
 
       - name: Verify Dart Formatting
         working-directory: ./apps/mobile
         run: dart format --output=none --set-exit-if-changed .
-        continue-on-error: true
 
       - name: Run Flutter Static Analysis
         working-directory: ./apps/mobile
         run: flutter analyze
-        continue-on-error: true
+
+      - name: Run Flutter Unit & Widget Tests
+        working-directory: ./apps/mobile
+        run: flutter test
+
+  # -------------------------------------------------------------
+  # Job 5: Unified CI Completion Gate (Branch Protection Check)
+  # -------------------------------------------------------------
+  ci-success:
+    name: All CI Quality Gates Passed
+    runs-on: ubuntu-latest
+    needs: [lint-and-typecheck, test-api, build-web, mobile-quality-gate]
+    if: always()
+    steps:
+      - name: Evaluate Matrix Status
+        run: |
+          if [ "${{ needs.lint-and-typecheck.result }}" != "success" ] || \
+             [ "${{ needs.test-api.result }}" != "success" ] || \
+             [ "${{ needs.build-web.result }}" != "success" ] || \
+             [ "${{ needs.mobile-quality-gate.result }}" != "success" ]; then
+            echo "::error::One or more required CI quality gates failed!"
+            echo "lint-and-typecheck: ${{ needs.lint-and-typecheck.result }}"
+            echo "test-api: ${{ needs.test-api.result }}"
+            echo "build-web: ${{ needs.build-web.result }}"
+            echo "mobile-quality-gate: ${{ needs.mobile-quality-gate.result }}"
+            exit 1
+          fi
+          echo "All monorepo CI/CD quality gates passed successfully!"
