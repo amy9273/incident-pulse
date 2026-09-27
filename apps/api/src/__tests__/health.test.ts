@@ -2,14 +2,14 @@ import { describe, it, after } from "node:test";
 import assert from "node:assert";
 import request from "supertest";
 import { createApp } from "../app.js";
-import { pool } from "../lib/db.js";
+import { prisma } from "../lib/prisma.js";
 import { redis } from "../lib/redis.js";
 
-describe("Health & Status Probes (Unit 01)", () => {
+describe("Health & Status Probes (Unit 01 / Unit 02)", () => {
   const app = createApp();
 
   after(async () => {
-    await pool.end();
+    await prisma.$disconnect();
     redis.disconnect();
   });
 

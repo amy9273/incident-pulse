@@ -1,0 +1,235 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  ADMIN
+  RESPONDER
+  VIEWER
+}
+
+enum TeamMemberRole {
+  LEAD
+  MEMBER
+}
+
+enum IncidentStatus {
+  TRIGGERED
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+enum IncidentUrgency {
+  HIGH
+  LOW
+}
+
+enum EscalationTargetType {
+  USER
+  SCHEDULE
+}
+
+enum IncidentLogAction {
+  TRIGGERED
+  ACKNOWLEDGED
+  RESOLVED
+  ESCALATED
+  REASSIGNED
+  NOTE_ADDED
+  NOTIFICATION_SENT
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  role         UserRole  @default(RESPONDER)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  memberships       TeamMembership[]
+  assignedIncidents Incident[]       @relation("IncidentAssignee")
+  scheduleShifts    ScheduleShift[]
+  escalationRules   EscalationRule[]
+  incidentLogs      IncidentLog[]
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+model Team {
+  id          String    @id @default(uuid())
+  name        String
+  slug        String    @unique
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  memberships        TeamMembership[]
+  escalationPolicies EscalationPolicy[]
+
+  @@index([slug])
+  @@map("teams")
+}
+
+model TeamMembership {
+  id        String         @id @default(uuid())
+  teamId    String
+  userId    String
+  role      TeamMemberRole @default(MEMBER)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([teamId])
+  @@index([userId])
+  @@map("team_memberships")
+}
+
+model EscalationPolicy {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  teamId      String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  team     Team?            @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  rules    EscalationRule[]
+  services Service[]
+
+  @@index([teamId])
+  @@map("escalation_policies")
+}
+
+model EscalationRule {
+  id                 String               @id @default(uuid())
+  escalationPolicyId String
+  stepNumber         Int
+  delayMinutes       Int                  @default(5)
+  targetType         EscalationTargetType
+  targetUserId       String?
+  targetScheduleId   String?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  escalationPolicy EscalationPolicy @relation(fields: [escalationPolicyId], references: [id], onDelete: Cascade)
+  targetUser       User?            @relation(fields: [targetUserId], references: [id], onDelete: SetNull)
+  targetSchedule   Schedule?        @relation(fields: [targetScheduleId], references: [id], onDelete: SetNull)
+
+  @@unique([escalationPolicyId, stepNumber])
+  @@index([escalationPolicyId])
+  @@index([targetUserId])
+  @@index([targetScheduleId])
+  @@map("escalation_rules")
+}
+
+model Schedule {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  timeZone    String    @default("UTC")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  shifts          ScheduleShift[]
+  escalationRules EscalationRule[]
+
+  @@map("schedules")
+}
+
+model ScheduleShift {
+  id         String   @id @default(uuid())
+  scheduleId String
+  userId     String
+  startTime  DateTime
+  endTime    DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  schedule Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([scheduleId, startTime, endTime])
+  @@index([userId])
+  @@map("schedule_shifts")
+}
+
+model Service {
+  id                 String    @id @default(uuid())
+  name               String
+  slug               String    @unique
+  description        String?
+  serviceKey         String    @unique
+  escalationPolicyId String
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  deletedAt          DateTime?
+
+  escalationPolicy EscalationPolicy @relation(fields: [escalationPolicyId], references: [id], onDelete: Restrict)
+  incidents        Incident[]
+
+  @@index([serviceKey])
+  @@index([escalationPolicyId])
+  @@map("services")
+}
+
+model Incident {
+  id             String          @id @default(uuid())
+  title          String
+  summary        String?
+  status         IncidentStatus  @default(TRIGGERED)
+  urgency        IncidentUrgency @default(HIGH)
+  serviceId      String
+  assigneeId     String?
+  fingerprint    String
+  escalationStep Int             @default(1)
+  alertCount     Int             @default(1)
+  acknowledgedAt DateTime?
+  resolvedAt     DateTime?
+  payload        Json?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  service  Service       @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  assignee User?         @relation("IncidentAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  logs     IncidentLog[]
+
+  @@index([serviceId, status])
+  @@index([fingerprint, status])
+  @@index([status])
+  @@index([assigneeId])
+  @@index([createdAt])
+  @@map("incidents")
+}
+
+model IncidentLog {
+  id         String            @id @default(uuid())
+  incidentId String
+  actorId    String?
+  action     IncidentLogAction
+  message    String
+  metadata   Json?
+  createdAt  DateTime          @default(now())
+
+  incident Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  actor    User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([incidentId, createdAt])
+  @@index([actorId])
+  @@map("incident_logs")
+}

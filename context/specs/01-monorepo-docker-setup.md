@@ -3,11 +3,13 @@
 ---
 
 ## 1. Goal
+
 Initialize the IncidentPulse monorepo root with npm workspaces (`apps/*`, `packages/*`), create container orchestration (`docker-compose.yml`) for local/CI environments, establish strict environment validation via Zod, and build the initial Express + TypeScript backend skeleton in `apps/api` featuring isolated `/health/live` and `/health/ready` probe endpoints verified against Neon PostgreSQL and Redis Cloud.
 
 ---
 
 ## 2. Design & Architecture
+
 - **Monorepo Layout**: Root `package.json` managing `apps/api`, `apps/web`, `apps/mobile`, and `packages/shared`.
 - **Config & Typing**: Root `tsconfig.base.json` shared by all TypeScript projects with `strict: true`.
 - **Environment Schema**: `apps/api/src/config/env.ts` parsing environment variables through Zod at server boot.
@@ -20,6 +22,7 @@ Initialize the IncidentPulse monorepo root with npm workspaces (`apps/*`, `packa
 ## 3. Implementation Details
 
 ### A. Root Monorepo
+
 - `package.json`: Configure npm workspaces, scripts (`dev:api`, `build:api`, `lint`, `typecheck`).
 - `tsconfig.base.json`: Base compiler options (ES2022, NodeNext / Bundler module resolution, strict).
 - `docker-compose.yml`: PostgreSQL 16 Alpine + Redis 7 Alpine with volume persistence and health checks.
@@ -27,6 +30,7 @@ Initialize the IncidentPulse monorepo root with npm workspaces (`apps/*`, `packa
 - `.env`: Real credentials for Neon PostgreSQL and Redis Cloud (gitignored).
 
 ### B. Backend Skeleton (`apps/api`)
+
 - `apps/api/package.json`:
   - Dependencies: `express`, `dotenv`, `zod`, `cors`, `helmet`, `pino`, `pino-pretty`, `ioredis`, `@prisma/client`.
   - DevDependencies: `typescript`, `@types/node`, `@types/express`, `@types/cors`, `tsx`.
@@ -38,12 +42,14 @@ Initialize the IncidentPulse monorepo root with npm workspaces (`apps/*`, `packa
 ---
 
 ## 4. Dependencies to Install
+
 - `express`, `cors`, `helmet`, `dotenv`, `zod`, `pino`, `pino-pretty`, `ioredis`
 - `typescript`, `tsx`, `@types/express`, `@types/node`, `@types/cors`
 
 ---
 
 ## 5. Verification Checklist
+
 - [ ] Monorepo `npm install` completes cleanly with zero errors.
 - [ ] `apps/api/src/config/env.ts` successfully parses valid configuration.
 - [ ] `GET /health/live` returns HTTP 200 with `{ status: "alive" }`.

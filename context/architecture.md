@@ -2,18 +2,18 @@
 
 ## Stack
 
-| Layer | Technology | Role |
-| :--- | :--- | :--- |
-| **Backend API** | Node.js + Express (TypeScript) | REST endpoints, webhook ingestion, correlation tracing |
-| **Job Queue & Timers** | Redis Cloud (AWS Singapore) + BullMQ (`ioredis`) | Escalation state machine timers, asynchronous dispatch |
-| **Real-Time Sync** | Socket.io / WebSockets | Bi-directional live incident feeds to Web and Mobile |
-| **Primary Database** | Neon PostgreSQL (AWS Singapore) + Prisma ORM | Relational data: Incidents, Schedules, Teams, Audit Logs |
-| **Web Frontend** | Next.js (TypeScript) + Tailwind CSS | Operator dashboard, schedule builder, analytics |
-| **Web UI Components** | shadcn/ui + Radix UI + Lucide Icons | Accessible, high-density monitoring UI components |
-| **Mobile App** | Flutter (Dart) | Cross-platform mobile responder app (iOS/Android) |
-| **Mobile Local Cache** | SQLite (`sqflite` or `drift`) | Offline-first incident caching and transactional outbox |
-| **Notifications** | FCM / Web Push (Mockable in Dev) | Emergency push notifications for on-call engineers |
-| **Containerization** | Docker + Docker Compose | Local/CI reproducible orchestration (Postgres 16 + Redis 7) |
+| Layer                  | Technology                                       | Role                                                        |
+| :--------------------- | :----------------------------------------------- | :---------------------------------------------------------- |
+| **Backend API**        | Node.js + Express (TypeScript)                   | REST endpoints, webhook ingestion, correlation tracing      |
+| **Job Queue & Timers** | Redis Cloud (AWS Singapore) + BullMQ (`ioredis`) | Escalation state machine timers, asynchronous dispatch      |
+| **Real-Time Sync**     | Socket.io / WebSockets                           | Bi-directional live incident feeds to Web and Mobile        |
+| **Primary Database**   | Neon PostgreSQL (AWS Singapore) + Prisma ORM     | Relational data: Incidents, Schedules, Teams, Audit Logs    |
+| **Web Frontend**       | Next.js (TypeScript) + Tailwind CSS              | Operator dashboard, schedule builder, analytics             |
+| **Web UI Components**  | shadcn/ui + Radix UI + Lucide Icons              | Accessible, high-density monitoring UI components           |
+| **Mobile App**         | Flutter (Dart)                                   | Cross-platform mobile responder app (iOS/Android)           |
+| **Mobile Local Cache** | SQLite (`sqflite` or `drift`)                    | Offline-first incident caching and transactional outbox     |
+| **Notifications**      | FCM / Web Push (Mockable in Dev)                 | Emergency push notifications for on-call engineers          |
+| **Containerization**   | Docker + Docker Compose                          | Local/CI reproducible orchestration (Postgres 16 + Redis 7) |
 
 ---
 
