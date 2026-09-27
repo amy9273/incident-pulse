@@ -4,6 +4,7 @@ import cors from "cors";
 import { correlationMiddleware } from "./middlewares/correlation.middleware.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
 import { healthRouter } from "./routes/health.routes.js";
+import { authRouter } from "./routes/auth.routes.js";
 import { env } from "./config/env.js";
 
 export const createApp = () => {
@@ -26,7 +27,10 @@ export const createApp = () => {
   // 3. Health & Status Probes
   app.use("/health", healthRouter);
 
-  // 4. Root Welcome Route
+  // 4. API v1 Routes
+  app.use("/api/v1/auth", authRouter);
+
+  // 5. Root Welcome Route
   app.get("/", (_req, res) => {
     res.json({
       name: "IncidentPulse API",
@@ -36,7 +40,7 @@ export const createApp = () => {
     });
   });
 
-  // 5. Centralized Error Middleware (Must be last)
+  // 6. Centralized Error Middleware (Must be last)
   app.use(errorMiddleware);
 
   return app;
