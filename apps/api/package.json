@@ -2,6 +2,7 @@
   "name": "@incident-pulse/api",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "IncidentPulse Backend API & Escalation Engine",
   "main": "dist/index.js",
   "scripts": {
@@ -24,6 +25,7 @@
     "@incident-pulse/shared": "*",
     "@prisma/client": "^6.4.1",
     "bcryptjs": "^3.0.3",
+    "bullmq": "^6.3.9",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",

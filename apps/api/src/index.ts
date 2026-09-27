@@ -3,8 +3,15 @@ import { env } from "./config/env.js";
 import { logger } from "./lib/logger.js";
 import { pool } from "./lib/db.js";
 import { redis } from "./lib/redis.js";
+import {
+  createEscalationWorker,
+  escalationQueue,
+} from "./workers/escalation.worker.js";
 
 const app = createApp();
+
+// Start BullMQ background escalation worker
+const escalationWorker = createEscalationWorker();
 
 const server = app.listen(env.PORT, () => {
   logger.info(
@@ -12,6 +19,7 @@ const server = app.listen(env.PORT, () => {
   );
   logger.info(`🩺 Liveness probe:  http://localhost:${env.PORT}/health/live`);
   logger.info(`🩺 Readiness probe: http://localhost:${env.PORT}/health/ready`);
+  logger.info(`⚡ BullMQ Escalation worker initialized and listening`);
 });
 
 // Graceful Shutdown Handling (Invariants & 12-Factor Best Practice)
@@ -20,6 +28,14 @@ const handleGracefulShutdown = async (signal: string) => {
 
   server.close(async () => {
     logger.info("HTTP server closed. Releasing resources...");
+
+    try {
+      await escalationWorker.close();
+      await escalationQueue.close();
+      logger.info("BullMQ escalation worker and queue closed.");
+    } catch (err) {
+      logger.error({ err }, "Error closing BullMQ worker");
+    }
 
     try {
       await pool.end();
