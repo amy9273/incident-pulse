@@ -10,7 +10,7 @@ _Update this file after every meaningful implementation step or architectural de
 
 ## Current Goal
 
-- Scaffold Next.js App Shell & Design System (Unit 07).
+- Implement Live Incident Triage Feed with TanStack Query and WebSockets (Unit 08).
 
 ---
 
@@ -24,18 +24,18 @@ _Update this file after every meaningful implementation step or architectural de
 - [x] **Unit 04: Alert Ingestion Webhook & Deduplication Engine**: Implemented `POST /api/v1/webhooks/services/:serviceKey` and `POST /api/v1/webhooks/alert`, Zod schema validation with `WebhookAlertSchema`, deterministic SHA-256 fingerprint generation, atomic transactional deduplication against open incidents (`TRIGGERED` / `ACKNOWLEDGED`), audit log append in `IncidentLog`, and comprehensive test suite.
 - [x] **Unit 05: BullMQ Escalation State Machine Worker**: Implemented Redis-backed BullMQ delayed queue (`escalation-queue`) and background worker (`createEscalationWorker`), multi-tier escalation target resolver (`resolveTarget`), automatic escalation state progression on timeout expiration, timer cancellation on `acknowledge`/`resolve` (Invariant #1), incident triage endpoints (`POST /api/v1/incidents/:id/acknowledge`, `POST /api/v1/incidents/:id/resolve`), and full audit history logging.
 - [x] **Unit 06: Real-Time WebSocket Server**: Implemented Socket.io server integrated with Express HTTP server, JWT handshake authentication, automatic room subscriptions (`incidents:global`, `user:${userId}`, `service:${serviceId}`, `incident:${incidentId}`), typed broadcast emitters (`incident:created`, `incident:updated`, `incident:escalated`), integrated event broadcasts across `AlertIngestionService`, `IncidentService`, and `EscalationService`, with full typecheck, lint, and test suite verification.
+- [x] **Unit 07: Next.js App Shell & Design System**: Scaffolded Next.js App Router in `apps/web` with Tailwind CSS design tokens matching `ui-context.md`, dark/light mode switching (`next-themes`), responsive sidebar and header with live WebSocket indicator, 4-state UI component library (`Skeleton`, `EmptyState`, `ErrorState`, `StatusBadge`, `Button`, `Card`, `Input`), `AuthContext` session persistence, `/login` page with demo quick-select accounts, and production build passing with 10 static prerendered pages.
 
 ---
 
 ## In Progress
 
-- [ ] **Unit 07: Next.js App Shell & Design System**: Setting up Next.js 14+ App Router in `apps/web`, Tailwind CSS with semantic tokens from `ui-context.md`, dark/light mode toggle, authenticated shell layout with Lucide icons.
+- [ ] **Unit 08: Live Incident Triage Feed**: TanStack Query + WebSocket integration for real-time incident state management, interactive 1-click Acknowledge/Resolve triage actions, incident detail drawer, and filtering.
 
 ---
 
 ## Next Up
 
-- [ ] Unit 08: Live Incident Triage Feed (Next.js + TanStack Query + WebSockets).
 - [ ] Unit 09: Visual On-Call Schedule Builder.
 - [ ] Unit 10: Service & Webhook Integration Manager.
 
@@ -55,6 +55,7 @@ _Update this file after every meaningful implementation step or architectural de
 - **WebSocket Protocol**: Using Socket.io for guaranteed fallback, automatic reconnection, and room-based tenant dispatching.
 - **Machine-to-Machine Service Keys**: Service key middleware supports `Authorization: Bearer inc_live_...`, `x-service-key` header, or `:serviceKey` URL route parameter, providing flexible webhook integration across different alert providers.
 - **Deterministic Alert Fingerprinting**: Automatic SHA-256 hashing based on `(serviceId + title + urgency)` guarantees zero duplicate open incidents without requiring manual deduplication keys from monitoring tools.
+- **4-State UI & Semantic Design System**: Enforced across Next.js and Flutter using CSS variables and dedicated tokens from `context/ui-context.md` (no arbitrary hex styling).
 
 ---
 
@@ -65,4 +66,5 @@ _Update this file after every meaningful implementation step or architectural de
 - Unit 03 completed on `feat/unit-03-auth-service-keys` and merged to `main`.
 - Unit 04 completed on `feat/unit-04-alert-ingestion-deduplication`.
 - Unit 05 completed on `feat/unit-05-escalation-worker-bullmq`.
-- Unit 06 completed on `feat/unit-06-realtime-websocket-server`: Socket.io server initialized, JWT auth handshake, room dispatching, event broadcasts wired into ingestion, triage, and auto-escalation, verified with 0 errors in typecheck, lint, and Prettier formatting.
+- Unit 06 completed on `feat/unit-06-realtime-websocket-server`.
+- Unit 07 completed on `feat/unit-07-nextjs-app-shell`: Next.js 14 App Router, strict TypeScript, Tailwind semantic design tokens matching `ui-context.md`, 4-state UI components (`Skeleton`, `EmptyState`, `ErrorState`, `StatusBadge`), high-contrast login screen with demo profiles, responsive `AppSidebar` and `AppHeader` with `LiveStatusIndicator`, verified with 0 lint errors, 0 typecheck errors, and successful Next.js static production build.
