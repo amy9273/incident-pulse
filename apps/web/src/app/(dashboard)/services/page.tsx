@@ -29,6 +29,7 @@ import { useServices, useDeleteService } from "@/hooks/useServices";
 import { CreateServiceModal } from "@/components/services/CreateServiceModal";
 import { RotateKeyModal } from "@/components/services/RotateKeyModal";
 import { ServiceIntegrationDrawer } from "@/components/services/ServiceIntegrationDrawer";
+import { ServiceUptimeBar } from "@/components/services/ServiceUptimeBar";
 import { ServiceListItem } from "@incident-pulse/shared";
 
 export default function ServicesPage() {
@@ -341,6 +342,14 @@ export default function ServicesPage() {
                           ))}
                         </div>
                       )}
+                  </div>
+
+                  {/* 24-Hour Service Uptime History Bar */}
+                  <div className="rounded-lg border border-border/60 bg-secondary/20 p-2.5">
+                    <ServiceUptimeBar
+                      activeIncidents={srv.activeIncidents}
+                      totalIncidents={srv.totalIncidents}
+                    />
                   </div>
 
                   {/* Service Integration Key Box */}

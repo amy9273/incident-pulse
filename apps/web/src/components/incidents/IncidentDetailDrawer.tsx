@@ -10,6 +10,7 @@ import {
 import { StatusBadge } from "../ui/StatusBadge";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
+import { JsonViewer } from "../ui/JsonViewer";
 import {
   X,
   Layers,
@@ -17,8 +18,6 @@ import {
   Clock,
   Key,
   FileCode,
-  Copy,
-  Check,
   History,
   ShieldAlert,
 } from "lucide-react";
@@ -42,8 +41,6 @@ export function IncidentDetailDrawer({
   isAckLoading = false,
   isResolveLoading = false,
 }: IncidentDetailDrawerProps) {
-  const [copiedPayload, setCopiedPayload] = React.useState(false);
-
   React.useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape" && isOpen) {
@@ -62,11 +59,18 @@ export function IncidentDetailDrawer({
   const isAck = incident.status === IncidentStatus.ACKNOWLEDGED;
   const isResolved = incident.status === IncidentStatus.RESOLVED;
 
-  const handleCopyPayload = () => {
-    if (incident.payload && typeof navigator !== "undefined") {
-      navigator.clipboard.writeText(JSON.stringify(incident.payload, null, 2));
-      setCopiedPayload(true);
-      setTimeout(() => setCopiedPayload(false), 2000);
+  const getLogDotColor = (action: IncidentLogAction | string) => {
+    switch (action) {
+      case IncidentLogAction.TRIGGERED:
+        return "bg-red-500 ring-2 ring-red-500/20";
+      case IncidentLogAction.ACKNOWLEDGED:
+        return "bg-amber-500 ring-2 ring-amber-500/20";
+      case IncidentLogAction.RESOLVED:
+        return "bg-emerald-500 ring-2 ring-emerald-500/20";
+      case IncidentLogAction.ESCALATED:
+        return "bg-purple-500 ring-2 ring-purple-500/20";
+      default:
+        return "bg-primary ring-2 ring-primary/20";
     }
   };
 
@@ -211,34 +215,10 @@ export function IncidentDetailDrawer({
             {/* Raw Webhook Payload */}
             {incident.payload && (
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                    <FileCode className="h-4 w-4" /> Raw Webhook Payload
-                  </span>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 text-xs gap-1"
-                    onClick={handleCopyPayload}
-                  >
-                    {copiedPayload ? (
-                      <>
-                        <Check className="h-3.5 w-3.5 text-emerald-500" />
-                        Copied
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-3.5 w-3.5" />
-                        Copy JSON
-                      </>
-                    )}
-                  </Button>
-                </div>
-                <div className="rounded-lg border border-border bg-muted/40 p-3 max-h-48 overflow-y-auto">
-                  <pre className="text-[11px] font-mono text-foreground whitespace-pre-wrap">
-                    {JSON.stringify(incident.payload, null, 2)}
-                  </pre>
-                </div>
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                  <FileCode className="h-4 w-4" /> Raw Webhook Payload
+                </span>
+                <JsonViewer data={incident.payload} maxHeight="max-h-56" />
               </div>
             )}
 
@@ -248,11 +228,15 @@ export function IncidentDetailDrawer({
                 <History className="h-4 w-4" /> Incident Audit Timeline
               </span>
 
-              <div className="space-y-3 border-l-2 border-border ml-2 pl-4">
+              <div className="space-y-4 border-l-2 border-dashed border-border/80 ml-2.5 pl-4">
                 {incident.logs && incident.logs.length > 0 ? (
                   incident.logs.map((log) => (
                     <div key={log.id} className="relative space-y-1">
-                      <div className="absolute -left-[23px] top-1 h-3 w-3 rounded-full border-2 border-background bg-primary" />
+                      <div
+                        className={`absolute -left-[23px] top-1 h-3 w-3 rounded-full border-2 border-card ${getLogDotColor(
+                          log.action,
+                        )}`}
+                      />
                       <div className="flex items-center gap-2">
                         {getLogActionBadge(log.action)}
                         <span className="text-[11px] text-muted-foreground">

@@ -11,6 +11,22 @@ import {
 } from "@/components/ui/Card";
 import { User, Clock, ShieldCheck, AlertCircle, Globe } from "lucide-react";
 
+function formatRemaining(endTimeStr: string): string {
+  const diffMs = new Date(endTimeStr).getTime() - Date.now();
+  if (diffMs <= 0) return "Ending now";
+  const diffMinutes = Math.floor(diffMs / (1000 * 60));
+  const hours = Math.floor(diffMinutes / 60);
+  const mins = diffMinutes % 60;
+  if (hours > 24) {
+    const days = Math.floor(hours / 24);
+    return `${days}d ${hours % 24}h`;
+  }
+  if (hours > 0) {
+    return `${hours}h ${mins}m`;
+  }
+  return `${mins}m`;
+}
+
 interface ActiveOnCallSummaryProps {
   schedules: ScheduleDetail[];
 }
@@ -62,6 +78,10 @@ export function ActiveOnCallSummary({ schedules }: ActiveOnCallSummaryProps) {
                         </p>
                       </div>
                     </div>
+
+                    <span className="rounded bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                      Ends in {formatRemaining(sch.currentOnCallUser!.shiftEnd)}
+                    </span>
                   </div>
 
                   <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1 border-t border-border/40">

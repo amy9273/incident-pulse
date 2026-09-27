@@ -14,6 +14,22 @@ import {
   Plus,
 } from "lucide-react";
 
+function formatShiftCountdown(endTimeStr: string): string {
+  const diffMs = new Date(endTimeStr).getTime() - Date.now();
+  if (diffMs <= 0) return "Ending now";
+  const diffMinutes = Math.floor(diffMs / (1000 * 60));
+  const hours = Math.floor(diffMinutes / 60);
+  const mins = diffMinutes % 60;
+  if (hours > 24) {
+    const days = Math.floor(hours / 24);
+    return `${days}d ${hours % 24}h`;
+  }
+  if (hours > 0) {
+    return `${hours}h ${mins}m`;
+  }
+  return `${mins}m`;
+}
+
 interface ScheduleTimelineProps {
   schedule: ScheduleDetail;
   onAddShiftClick: () => void;
@@ -50,8 +66,35 @@ export function ScheduleTimeline({
     return list;
   }, [weekOffset]);
 
-  const shifts = schedule.shifts || [];
-  const now = new Date();
+  const shifts = React.useMemo(() => schedule.shifts || [], [schedule.shifts]);
+  const [now, setNow] = React.useState<Date>(() => new Date());
+
+  React.useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 30000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Active shift & next shift for live handoff countdown
+  const activeShift = React.useMemo(() => {
+    const nowTime = now.getTime();
+    return shifts.find((s) => {
+      const sStart = new Date(s.startTime).getTime();
+      const sEnd = new Date(s.endTime).getTime();
+      return sStart <= nowTime && sEnd >= nowTime;
+    });
+  }, [shifts, now]);
+
+  const nextShift = React.useMemo(() => {
+    if (!activeShift) return null;
+    const activeEndTime = new Date(activeShift.endTime).getTime();
+    const futureShifts = shifts
+      .filter((s) => new Date(s.startTime).getTime() >= activeEndTime)
+      .sort(
+        (a, b) =>
+          new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
+      );
+    return futureShifts[0] || null;
+  }, [shifts, activeShift]);
 
   const isSameDay = (d1: Date, d2: Date) => {
     return (
@@ -76,27 +119,39 @@ export function ScheduleTimeline({
 
   return (
     <div className="space-y-4">
-      {/* Navigation Controls */}
+      {/* Navigation & Active Handoff Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-3">
-        <div className="flex items-center gap-2">
-          <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-primary" />
-            Weekly Shift Timeline
-          </h3>
-          <span className="text-xs text-muted-foreground">
-            (
-            {days[0]!.toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-            })}{" "}
-            -{" "}
-            {days[6]!.toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            })}
-            )
-          </span>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-primary" />
+              Weekly Shift Timeline
+            </h3>
+            <span className="text-xs text-muted-foreground">
+              (
+              {days[0]!.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              })}{" "}
+              -{" "}
+              {days[6]!.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })}
+              )
+            </span>
+          </div>
+
+          {activeShift && (
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span>
+                Shift ends in {formatShiftCountdown(activeShift.endTime)}
+                {nextShift ? ` → Next: ${nextShift.userName}` : ""}
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -177,6 +232,21 @@ export function ScheduleTimeline({
                   </span>
                 )}
               </div>
+
+              {/* Dynamic "Now" cursor line for Today */}
+              {isToday && (
+                <div className="flex items-center gap-1.5 py-1 px-2 mb-2 rounded bg-primary/10 border border-primary/20 text-[10px] font-mono text-primary font-semibold">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary animate-ping" />
+                  <span>
+                    Now (
+                    {now.toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                    )
+                  </span>
+                </div>
+              )}
 
               {/* Day Shift Blocks */}
               <div className="flex-1 space-y-2 overflow-y-auto">

@@ -23,6 +23,10 @@ const DEMO_ACCOUNTS = [
     email: "admin@incidentpulse.io",
     password: "AdminPassword123!",
     role: "ADMIN",
+    badgeLabel: "Admin",
+    badgeClass: "bg-primary/10 text-primary border-primary/20",
+    initials: "AU",
+    initialsBg: "bg-primary/20 text-primary",
     description:
       "Full access to teams, services, escalation policies, and schedules",
   },
@@ -31,6 +35,11 @@ const DEMO_ACCOUNTS = [
     email: "sarah.chen@incidentpulse.io",
     password: "ResponderPassword123!",
     role: "RESPONDER",
+    badgeLabel: "L1 Primary",
+    badgeClass:
+      "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20",
+    initials: "SC",
+    initialsBg: "bg-red-500/20 text-red-500",
     description: "On-call responder for Core Payments Team (Level 1)",
   },
   {
@@ -38,6 +47,11 @@ const DEMO_ACCOUNTS = [
     email: "alex.kumar@incidentpulse.io",
     password: "ResponderPassword123!",
     role: "RESPONDER",
+    badgeLabel: "L2 Lead",
+    badgeClass:
+      "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+    initials: "AK",
+    initialsBg: "bg-amber-500/20 text-amber-500",
     description: "Platform Infrastructure Lead (Level 2)",
   },
   {
@@ -45,6 +59,10 @@ const DEMO_ACCOUNTS = [
     email: "viewer@incidentpulse.io",
     password: "Password123!",
     role: "VIEWER",
+    badgeLabel: "Viewer",
+    badgeClass: "bg-secondary text-secondary-foreground border-border",
+    initials: "VR",
+    initialsBg: "bg-secondary text-muted-foreground",
     description: "Read-only access to incident feeds and post-mortems",
   },
 ];
@@ -181,28 +199,39 @@ function LoginForm() {
                 key={acc.email}
                 type="button"
                 onClick={() => selectDemoAccount(acc)}
-                className={`flex items-start justify-between rounded-lg border p-3 text-left transition-all ${
+                className={`flex items-center justify-between rounded-lg border p-3 text-left transition-all gap-3 ${
                   isSelected
-                    ? "border-primary bg-primary/5 ring-1 ring-primary"
-                    : "border-border bg-card hover:bg-accent hover:border-border/80"
+                    ? "border-primary bg-primary/5 ring-1 ring-primary shadow-xs"
+                    : "border-border bg-card hover:bg-accent/60 hover:border-border/80"
                 }`}
               >
-                <div className="space-y-0.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-foreground">
-                      {acc.name}
-                    </span>
-                    <span className="rounded bg-secondary px-1.5 py-0.2 text-[10px] font-semibold text-secondary-foreground uppercase">
-                      {acc.role}
-                    </span>
+                <div className="flex items-center gap-3 min-w-0">
+                  <div
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-bold text-xs ${acc.initialsBg}`}
+                  >
+                    {acc.initials}
                   </div>
-                  <p className="text-[11px] text-muted-foreground">
-                    {acc.email}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground/80 italic">
-                    {acc.description}
-                  </p>
+
+                  <div className="space-y-0.5 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-semibold text-foreground">
+                        {acc.name}
+                      </span>
+                      <span
+                        className={`rounded border px-1.5 py-0.2 text-[10px] font-semibold uppercase ${acc.badgeClass}`}
+                      >
+                        {acc.badgeLabel}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground truncate">
+                      {acc.email}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground/80 italic line-clamp-1">
+                      {acc.description}
+                    </p>
+                  </div>
                 </div>
+
                 {isSelected && (
                   <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
                     <Check className="h-3 w-3" />
@@ -219,7 +248,11 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="relative min-h-screen flex flex-col items-center justify-center bg-background px-4 py-12">
+    <div className="relative min-h-screen flex flex-col items-center justify-center bg-background px-4 py-12 overflow-hidden">
+      {/* Ambient Radial Backdrop Glow */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] bg-primary/10 rounded-full blur-3xl pointer-events-none -z-10" />
+      <div className="absolute bottom-10 right-10 w-[350px] h-[350px] bg-red-500/10 rounded-full blur-3xl pointer-events-none -z-10" />
+
       {/* Top bar right toggle */}
       <div className="absolute top-4 right-4 flex items-center gap-2">
         <ThemeToggle />

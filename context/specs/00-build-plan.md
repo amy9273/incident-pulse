@@ -107,3 +107,13 @@ This file defines the decomposed, verifiable units for IncidentPulse in their st
 - **What it builds**: Root `README.md` with system architecture diagram (Mermaid), API Swagger docs, and a simulation script (`npm run simulate:incident`) that triggers a full end-to-end alert escalation walkthrough.
 - **Dependencies**: Unit 14.
 - **Output**: Portfolio-ready repository that any hiring manager can evaluate in 60 seconds.
+
+---
+
+## Phase 5: World-Class Platform Polish & Experience Design
+
+### Unit 16: UI/UX & Ergonomics Overhaul (Web & Mobile)
+
+- **What it builds**: Real-time incoming alert flash animations, Web Audio API emergency chime synthesizer, interactive syntax-highlighted JSON viewer with 1-click copy, visual schedule "Now" cursor and shift handoff countdown badge, 24h service uptime sparkline pills, mobile swipe-to-acknowledge triage gesture, safe-area button ergonomics, and interactive on-call rotation card.
+- **Dependencies**: Unit 15.
+- **Output**: Linear/Vercel/Apple-tier visual fidelity and operator ergonomics across web and mobile.
