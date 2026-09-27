@@ -6,11 +6,8 @@ _Update this file after every meaningful implementation step or architectural de
 
 ## Current Phase
 
-- **Phase 2 Complete: Full-Stack Web Dashboard (Next.js)**
-
-## Next Phase Goal
-
 - **Phase 3: Flutter Mobile Responder App (Units 11-13)**
+  - In Progress: **Unit 11: Flutter Scaffold & Design System**
 
 ---
 
@@ -28,12 +25,14 @@ _Update this file after every meaningful implementation step or architectural de
 - [x] **Unit 08: Live Incident Triage Feed**: Implemented real-time incident triage feed with `SocketContext` and `useSocket` hook subscribing to `incidents:global`, TanStack Query hooks (`useIncidents`, `useIncident`, `useAcknowledgeIncident`, `useResolveIncident`, `useTriggerTestAlert`), 1-click Acknowledge and Resolve triage actions with optimistic UI updates, high-density incident row list with semantic badges, `IncidentStatsCards` KPI summary, `IncidentDetailDrawer` showing raw JSON payloads and immutable audit trail timeline, `TriggerAlertModal` for webhook simulation, and keyboard shortcuts (`A`, `R`, `/`, `Esc`).
 - [x] **Unit 09: Visual On-Call Schedule Builder**: Implemented visual weekly timeline and rotation management in `apps/web`, backend REST CRUD endpoints (`/api/v1/schedules`, `/api/v1/schedules/:id`, `/api/v1/schedules/:id/shifts`, `/api/v1/users`), active on-call engineer identification with live countdown badges, modal forms for creating schedules and assigning shifts with timezone awareness and instant TanStack Query cache invalidation, and comprehensive integration tests.
 - [x] **Unit 10: Service & Webhook Integration Manager**: Implemented monitored service registry, dynamic API key rotation, copyable cURL/Prometheus/Datadog/Node.js webhook integration snippets, multi-tier escalation policy bindings, slide-over testing console with live simulated alert runner and instant feedback, and 100% passing test suites across all 70 test cases.
+- [x] **Unit 11: Flutter Scaffold & Design System**: Scaffolded Flutter Clean Architecture application in `apps/mobile` with Riverpod state management, Dio HTTP client with JWT interceptor, secure Keychain/Keystore token storage, Material 3 theme matching `ui-context.md` (Deep Obsidian dark mode `#0B0F19`, light mode `#F8FAFC`, and status tokens), 4-state UI widgets (`SkeletonWidget`, `EmptyStateWidget`, `ErrorStateWidget`, `StatusBadgeWidget` with pulsing beacon, `PrimaryButton` with 56dp touch height), high-contrast login screen with 1-tap demo profile quick-select, authenticated bottom navigation shell with active triage cards, and 100% passing tests and zero analyzer issues.
 
 ---
 
 ## Next Up
 
-- [ ] Phase 3: Flutter Mobile Responder App (Units 11-13).
+- [ ] Unit 12: Offline Incident Cache (SQLite & Transactional Outbox Pattern).
+- [ ] Unit 13: Emergency 1-Tap Triage UI & Push Handling.
 
 ---
 
@@ -57,4 +56,7 @@ _Update this file after every meaningful implementation step or architectural de
 - Unit 05 completed on `feat/unit-05-escalation-worker-bullmq`.
 - Unit 06 completed on `feat/unit-06-realtime-websocket-server`.
 - Unit 07 completed on `feat/unit-07-nextjs-app-shell`.
-- Unit 08 completed on `feat/unit-08-live-incident-triage-feed`: Real-time WebSocket event ingestion, optimistic 1-click Acknowledge/Resolve actions, audit trail timeline drawer, live test alert simulator, keyboard shortcuts, verified with 0 lint errors, 0 typecheck errors, and 100% passing tests.
+- [x] **Unit 08: Live Incident Triage Feed**: Real-time WebSocket event ingestion, optimistic 1-click Acknowledge/Resolve actions, audit trail timeline drawer, live test alert simulator, keyboard shortcuts, verified with 0 lint errors, 0 typecheck errors, and 100% passing tests.
+- Unit 09 completed on `feat/unit-09-visual-oncall-schedule-builder`: Visual weekly timeline, active on-call summary, shift creation modal, timezone awareness, and schedule API integration tests.
+- Unit 10 completed on `feat/unit-10-service-webhook-manager`: Monitored service catalog, dynamic key rotation, integration code snippets (cURL, Prometheus, Datadog), and simulated alert runner.
+- Unit 11 completed on `feat/unit-11-flutter-scaffold-design-system`: Scaffolded Flutter Clean Architecture application in `apps/mobile`, Material 3 theme extensions matching `ui-context.md`, 4-state UI widgets, secure storage, Riverpod auth, verified with 0 analyzer issues, clean dart format, and 100% passing tests.
