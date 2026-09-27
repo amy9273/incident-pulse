@@ -21,6 +21,7 @@ const DEMO_ACCOUNTS = [
   {
     name: "Admin User",
     email: "admin@incidentpulse.io",
+    password: "AdminPassword123!",
     role: "ADMIN",
     description:
       "Full access to teams, services, escalation policies, and schedules",
@@ -28,18 +29,21 @@ const DEMO_ACCOUNTS = [
   {
     name: "Sarah Chen",
     email: "sarah.chen@incidentpulse.io",
+    password: "ResponderPassword123!",
     role: "RESPONDER",
     description: "On-call responder for Core Payments Team (Level 1)",
   },
   {
     name: "Alex Kumar",
     email: "alex.kumar@incidentpulse.io",
+    password: "ResponderPassword123!",
     role: "RESPONDER",
     description: "Platform Infrastructure Lead (Level 2)",
   },
   {
     name: "Viewer",
     email: "viewer@incidentpulse.io",
+    password: "Password123!",
     role: "VIEWER",
     description: "Read-only access to incident feeds and post-mortems",
   },
@@ -53,7 +57,7 @@ function LoginForm() {
   const { login, isAuthenticated } = useAuth();
 
   const [email, setEmail] = React.useState("admin@incidentpulse.io");
-  const [password, setPassword] = React.useState("Password123!");
+  const [password, setPassword] = React.useState("AdminPassword123!");
   const [isLoading, setIsLoading] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
 
@@ -82,9 +86,9 @@ function LoginForm() {
     }
   }
 
-  function selectDemoAccount(demoEmail: string) {
-    setEmail(demoEmail);
-    setPassword("Password123!");
+  function selectDemoAccount(demo: (typeof DEMO_ACCOUNTS)[number]) {
+    setEmail(demo.email);
+    setPassword(demo.password);
     setErrorMessage(null);
   }
 
@@ -176,7 +180,7 @@ function LoginForm() {
               <button
                 key={acc.email}
                 type="button"
-                onClick={() => selectDemoAccount(acc.email)}
+                onClick={() => selectDemoAccount(acc)}
                 className={`flex items-start justify-between rounded-lg border p-3 text-left transition-all ${
                   isSelected
                     ? "border-primary bg-primary/5 ring-1 ring-primary"
