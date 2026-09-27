@@ -15,18 +15,19 @@
 ## Completed
 - [x] Initialized Six-File Context methodology docs (`project-overview.md`, `architecture.md`, `code-standards.md`, `ai-workflow-rules.md`, `ui-context.md`, `progress-tracker.md`).
 - [x] Defined build plan and decomposed initial units in `context/specs/00-build-plan.md`.
+- [x] **Unit 01: Monorepo Foundation & Docker Environment**: Configured monorepo root workspaces, `.env.example`, `docker-compose.yml`, strict Zod env parsing, and Express API skeleton with passing integration tests for `/health/live` and `/health/ready` against live Neon PostgreSQL and Redis Cloud.
 
 ---
 
 ## In Progress
-- [ ] Unit 01: Monorepo Foundation & Docker Compose setup (Postgres + Redis).
+- [ ] None (Unit 01 complete, ready for Unit 02).
 
 ---
 
 ## Next Up
-- [ ] Unit 02: Database Models & Prisma Migrations (Users, Services, Incidents, Escalation Policies).
-- [ ] Unit 03: Webhook Ingestion Endpoint with Fingerprint Deduplication.
-- [ ] Unit 04: BullMQ Escalation State Machine Worker.
+- [ ] Unit 02: Database Models & Prisma Migrations (Users, Teams, Services, Escalation Policies, Incidents).
+- [ ] Unit 03: Authentication & Service Key Verification Middleware.
+- [ ] Unit 04: Webhook Ingestion Endpoint with Fingerprint Deduplication.
 
 ---
 
