@@ -15,7 +15,7 @@ jobs:
   # Job 1: Linting, Formatting, & Static Typing
   # -------------------------------------------------------------
   lint-and-typecheck:
-    name: Lint & Typecheck (Monorepo)
+    name: Lint & Typecheck (API & Web)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -162,8 +162,8 @@ jobs:
   # -------------------------------------------------------------
   # Job 4: Flutter Mobile Quality Gate
   # -------------------------------------------------------------
-  mobile-quality-gate:
-    name: Flutter Mobile Quality Gate (Analyze & Test)
+  analyze-mobile:
+    name: Flutter Lint & Static Analysis
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -203,7 +203,7 @@ jobs:
   ci-success:
     name: All CI Quality Gates Passed
     runs-on: ubuntu-latest
-    needs: [lint-and-typecheck, test-api, build-web, mobile-quality-gate]
+    needs: [lint-and-typecheck, test-api, build-web, analyze-mobile]
     if: always()
     steps:
       - name: Evaluate Matrix Status
@@ -211,12 +211,12 @@ jobs:
           if [ "${{ needs.lint-and-typecheck.result }}" != "success" ] || \
              [ "${{ needs.test-api.result }}" != "success" ] || \
              [ "${{ needs.build-web.result }}" != "success" ] || \
-             [ "${{ needs.mobile-quality-gate.result }}" != "success" ]; then
+             [ "${{ needs.analyze-mobile.result }}" != "success" ]; then
             echo "::error::One or more required CI quality gates failed!"
             echo "lint-and-typecheck: ${{ needs.lint-and-typecheck.result }}"
             echo "test-api: ${{ needs.test-api.result }}"
             echo "build-web: ${{ needs.build-web.result }}"
-            echo "mobile-quality-gate: ${{ needs.mobile-quality-gate.result }}"
+            echo "analyze-mobile: ${{ needs.analyze-mobile.result }}"
             exit 1
           fi
           echo "All monorepo CI/CD quality gates passed successfully!"
