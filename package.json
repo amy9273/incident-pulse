@@ -22,7 +22,8 @@
     "test:api": "npm run test --workspace=apps/api",
     "test:mobile": "npm run test --workspace=apps/mobile --if-present",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
-    "format:check": "prettier --check \"apps/**/*.{ts,tsx,js,json,md}\""
+    "format:check": "prettier --check \"apps/**/*.{ts,tsx,js,json,md}\"",
+    "simulate:incident": "tsx scripts/simulate-incident.ts"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^7.18.0",
