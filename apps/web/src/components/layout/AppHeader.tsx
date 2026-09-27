@@ -2,11 +2,12 @@
 
 import * as React from "react";
 import { usePathname } from "next/navigation";
-import { Menu, Search, Command } from "lucide-react";
+import { Menu } from "lucide-react";
 import { LiveStatusIndicator } from "../ui/LiveStatusIndicator";
 import { ThemeToggle } from "../ui/ThemeToggle";
 import { UserDropdown } from "./UserDropdown";
 import { Button } from "../ui/Button";
+import { useSocket } from "@/context/SocketContext";
 
 interface AppHeaderProps {
   onMenuClick?: () => void;
@@ -14,10 +15,11 @@ interface AppHeaderProps {
 
 export function AppHeader({ onMenuClick }: AppHeaderProps) {
   const pathname = usePathname();
+  const { isConnected } = useSocket();
 
   const getPageTitle = (path: string) => {
     if (path.startsWith("/incidents") || path === "/")
-      return "Incidents Overview";
+      return "Live Incident Board";
     if (path.startsWith("/schedules")) return "On-Call Schedules";
     if (path.startsWith("/services")) return "Monitored Services & Keys";
     if (path.startsWith("/analytics")) return "Incident Analytics & MTTA/MTTR";
@@ -48,7 +50,7 @@ export function AppHeader({ onMenuClick }: AppHeaderProps) {
 
       {/* Right section: Live status, Theme, User */}
       <div className="flex items-center gap-2.5">
-        <LiveStatusIndicator isConnected={true} />
+        <LiveStatusIndicator isConnected={isConnected} />
 
         <div className="h-4 w-[1px] bg-border mx-1" />
 
