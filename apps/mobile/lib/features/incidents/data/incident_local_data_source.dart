@@ -14,7 +14,7 @@ class IncidentLocalDataSource {
   final Uuid _uuid;
 
   IncidentLocalDataSource(this._appDatabase, [Uuid? uuid])
-    : _uuid = uuid ?? const Uuid();
+      : _uuid = uuid ?? const Uuid();
 
   Future<Database> get _db => _appDatabase.database;
 
@@ -57,8 +57,8 @@ class IncidentLocalDataSource {
         if (existing.isNotEmpty) {
           final isLocallyUpdated =
               (existing.first[IncidentTable.colIsLocallyUpdated] as int? ??
-                  0) ==
-              1;
+                      0) ==
+                  1;
           if (isLocallyUpdated) {
             // Skip overwriting local optimistic changes awaiting sync
             continue;
@@ -86,8 +86,8 @@ class IncidentLocalDataSource {
       await txn.update(
         IncidentTable.tableName,
         {
-          IncidentTable.colStatus: IncidentStatus.acknowledged.name
-              .toUpperCase(),
+          IncidentTable.colStatus:
+              IncidentStatus.acknowledged.name.toUpperCase(),
           IncidentTable.colAcknowledgedAt: now.toIso8601String(),
           IncidentTable.colUpdatedAt: now.toIso8601String(),
           IncidentTable.colIsLocallyUpdated: 1,
@@ -143,9 +143,8 @@ class IncidentLocalDataSource {
         OutboxTable.colId: outboxId,
         OutboxTable.colIncidentId: incidentId,
         OutboxTable.colAction: OutboxActionType.resolve.toDbString(),
-        OutboxTable.colPayload: payloadMap != null
-            ? jsonEncode(payloadMap)
-            : null,
+        OutboxTable.colPayload:
+            payloadMap != null ? jsonEncode(payloadMap) : null,
         OutboxTable.colCreatedAt: now.toIso8601String(),
         OutboxTable.colStatus: OutboxStatus.pending.toDbString(),
         OutboxTable.colRetryCount: 0,

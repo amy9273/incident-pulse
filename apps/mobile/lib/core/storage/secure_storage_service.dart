@@ -10,15 +10,14 @@ class SecureStorageService {
   SecureStorageService({
     FlutterSecureStorage? secureStorage,
     required SharedPreferences prefs,
-  }) : _secureStorage =
-           secureStorage ??
-           const FlutterSecureStorage(
-             aOptions: AndroidOptions(),
-             iOptions: IOSOptions(
-               accessibility: KeychainAccessibility.first_unlock,
-             ),
-           ),
-       _prefs = prefs;
+  })  : _secureStorage = secureStorage ??
+            const FlutterSecureStorage(
+              aOptions: AndroidOptions(),
+              iOptions: IOSOptions(
+                accessibility: KeychainAccessibility.first_unlock,
+              ),
+            ),
+        _prefs = prefs;
 
   // Token management
   Future<void> saveAccessToken(String token) async {

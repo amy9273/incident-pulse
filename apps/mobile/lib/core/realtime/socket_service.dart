@@ -20,8 +20,8 @@ class SocketService {
   SocketService({
     required PushNotificationService notificationService,
     VoidCallback? onIncidentChanged,
-  }) : _notificationService = notificationService,
-       _onIncidentChanged = onIncidentChanged;
+  })  : _notificationService = notificationService,
+        _onIncidentChanged = onIncidentChanged;
 
   SocketConnectionStatus get status => _status;
   Stream<SocketConnectionStatus> get statusStream => _statusController.stream;

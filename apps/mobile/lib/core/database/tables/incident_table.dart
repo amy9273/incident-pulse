@@ -20,8 +20,7 @@ class IncidentTable {
   static const String colUpdatedAt = 'updated_at';
   static const String colIsLocallyUpdated = 'is_locally_updated';
 
-  static const String createTableSql =
-      '''
+  static const String createTableSql = '''
     CREATE TABLE IF NOT EXISTS $tableName (
       $colId TEXT PRIMARY KEY,
       $colTitle TEXT NOT NULL,
@@ -41,13 +40,11 @@ class IncidentTable {
     );
   ''';
 
-  static const String createStatusIndexSql =
-      '''
+  static const String createStatusIndexSql = '''
     CREATE INDEX IF NOT EXISTS idx_incidents_status ON $tableName ($colStatus);
   ''';
 
-  static const String createCreatedAtIndexSql =
-      '''
+  static const String createCreatedAtIndexSql = '''
     CREATE INDEX IF NOT EXISTS idx_incidents_created_at ON $tableName ($colCreatedAt DESC);
   ''';
 }

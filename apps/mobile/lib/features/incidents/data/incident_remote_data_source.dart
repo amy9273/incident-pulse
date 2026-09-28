@@ -27,7 +27,7 @@ class IncidentRemoteDataSource {
     } on DioException catch (e) {
       final errorMsg = e.response?.data is Map<String, dynamic>
           ? (e.response!.data as Map<String, dynamic>)['message'] as String? ??
-                'Failed to fetch incidents'
+              'Failed to fetch incidents'
           : e.message ?? 'Network error';
       throw Exception(errorMsg);
     }
@@ -49,7 +49,7 @@ class IncidentRemoteDataSource {
     } on DioException catch (e) {
       final errorMsg = e.response?.data is Map<String, dynamic>
           ? (e.response!.data as Map<String, dynamic>)['message'] as String? ??
-                'Failed to fetch incident'
+              'Failed to fetch incident'
           : e.message ?? 'Network error';
       throw Exception(errorMsg);
     }
@@ -62,7 +62,7 @@ class IncidentRemoteDataSource {
     } on DioException catch (e) {
       final errorMsg = e.response?.data is Map<String, dynamic>
           ? (e.response!.data as Map<String, dynamic>)['message'] as String? ??
-                'Failed to acknowledge incident'
+              'Failed to acknowledge incident'
           : e.message ?? 'Network error';
       throw Exception(errorMsg);
     }
@@ -81,7 +81,7 @@ class IncidentRemoteDataSource {
     } on DioException catch (e) {
       final errorMsg = e.response?.data is Map<String, dynamic>
           ? (e.response!.data as Map<String, dynamic>)['message'] as String? ??
-                'Failed to resolve incident'
+              'Failed to resolve incident'
           : e.message ?? 'Network error';
       throw Exception(errorMsg);
     }

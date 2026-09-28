@@ -43,8 +43,7 @@ class IncidentModel {
   factory IncidentModel.fromJson(Map<String, dynamic> json) {
     String svcName = 'Unknown Service';
     if (json['service'] is Map<String, dynamic>) {
-      svcName =
-          (json['service'] as Map<String, dynamic>)['name'] as String? ??
+      svcName = (json['service'] as Map<String, dynamic>)['name'] as String? ??
           'Unknown Service';
     } else if (json['serviceName'] != null) {
       svcName = json['serviceName'] as String;
@@ -96,9 +95,8 @@ class IncidentModel {
     Map<String, dynamic>? parsedPayload;
     if (row[IncidentTable.colPayload] != null) {
       try {
-        parsedPayload =
-            jsonDecode(row[IncidentTable.colPayload] as String)
-                as Map<String, dynamic>;
+        parsedPayload = jsonDecode(row[IncidentTable.colPayload] as String)
+            as Map<String, dynamic>;
       } catch (_) {}
     }
 

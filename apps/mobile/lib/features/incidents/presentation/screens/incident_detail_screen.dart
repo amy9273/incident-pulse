@@ -102,9 +102,8 @@ class _IncidentDetailScreenState extends ConsumerState<IncidentDetailScreen> {
     final timeFormatted = DateFormat(
       'MMM d, yyyy • HH:mm:ss',
     ).format(currentIncident.createdAt);
-    final elapsedMinutes = DateTime.now()
-        .difference(currentIncident.createdAt)
-        .inMinutes;
+    final elapsedMinutes =
+        DateTime.now().difference(currentIncident.createdAt).inMinutes;
 
     return Scaffold(
       backgroundColor: AppColors.darkBackground,
@@ -263,8 +262,7 @@ class _IncidentDetailScreenState extends ConsumerState<IncidentDetailScreen> {
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color:
-                                  currentIncident.status ==
+                              color: currentIncident.status ==
                                       IncidentStatus.triggered
                                   ? AppColors.triggered.withValues(alpha: 0.15)
                                   : AppColors.resolved.withValues(alpha: 0.15),
@@ -274,8 +272,7 @@ class _IncidentDetailScreenState extends ConsumerState<IncidentDetailScreen> {
                               currentIncident.status == IncidentStatus.triggered
                                   ? Icons.timer_outlined
                                   : Icons.check_circle_outline,
-                              color:
-                                  currentIncident.status ==
+                              color: currentIncident.status ==
                                       IncidentStatus.triggered
                                   ? AppColors.triggered
                                   : AppColors.resolved,
@@ -292,9 +289,9 @@ class _IncidentDetailScreenState extends ConsumerState<IncidentDetailScreen> {
                                           IncidentStatus.triggered
                                       ? 'Tier 1 Escalation Active (SLA Running)'
                                       : currentIncident.status ==
-                                            IncidentStatus.acknowledged
-                                      ? 'Acknowledged • SLA Paused'
-                                      : 'Incident Resolved • All SLAs Met',
+                                              IncidentStatus.acknowledged
+                                          ? 'Acknowledged • SLA Paused'
+                                          : 'Incident Resolved • All SLAs Met',
                                   style: AppTypography.bodyMedium.copyWith(
                                     color: AppColors.darkTextPrimary,
                                     fontWeight: FontWeight.w600,
@@ -436,9 +433,8 @@ class _IncidentDetailScreenState extends ConsumerState<IncidentDetailScreen> {
                 color: AppColors.resolved,
               ),
             ),
-            onPressed: _isProcessing
-                ? null
-                : () => _handleResolve(currentIncident),
+            onPressed:
+                _isProcessing ? null : () => _handleResolve(currentIncident),
           ),
         ),
       ],

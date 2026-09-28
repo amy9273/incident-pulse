@@ -25,7 +25,8 @@ class AuthState {
   factory AuthState.authenticated({
     required AuthUser user,
     required String token,
-  }) => AuthState(isLoading: false, user: user, token: token);
+  }) =>
+      AuthState(isLoading: false, user: user, token: token);
 
   factory AuthState.error(String message) =>
       AuthState(isLoading: false, errorMessage: message);

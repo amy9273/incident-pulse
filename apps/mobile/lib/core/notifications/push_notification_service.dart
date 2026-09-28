@@ -29,15 +29,13 @@ class PushAlertEvent {
   factory PushAlertEvent.fromJson(Map<String, dynamic> json) {
     return PushAlertEvent(
       id: json['id'] as String? ?? const Uuid().v4(),
-      incidentId:
-          json['incidentId'] as String? ??
+      incidentId: json['incidentId'] as String? ??
           json['incident_id'] as String? ??
           const Uuid().v4(),
       title: json['title'] as String? ?? 'Incoming Emergency Alert',
       severity: (json['severity'] as String? ?? 'CRITICAL').toUpperCase(),
       urgency: (json['urgency'] as String? ?? 'HIGH').toUpperCase(),
-      serviceName:
-          json['serviceName'] as String? ??
+      serviceName: json['serviceName'] as String? ??
           json['service_name'] as String? ??
           'Production Service',
       receivedAt: json['receivedAt'] != null
@@ -51,16 +49,16 @@ class PushAlertEvent {
   }
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'incidentId': incidentId,
-    'title': title,
-    'severity': severity,
-    'urgency': urgency,
-    'serviceName': serviceName,
-    'receivedAt': receivedAt.toIso8601String(),
-    'payload': payload,
-    'fingerprint': fingerprint,
-  };
+        'id': id,
+        'incidentId': incidentId,
+        'title': title,
+        'severity': severity,
+        'urgency': urgency,
+        'serviceName': serviceName,
+        'receivedAt': receivedAt.toIso8601String(),
+        'payload': payload,
+        'fingerprint': fingerprint,
+      };
 
   bool get isCritical => severity == 'CRITICAL' || urgency == 'HIGH';
 }
@@ -75,7 +73,7 @@ class PushNotificationService {
   PushAlertEvent? _activeAlert;
 
   PushNotificationService({HapticService? hapticService})
-    : _hapticService = hapticService ?? const HapticService() {
+      : _hapticService = hapticService ?? const HapticService() {
     _deviceToken = 'fcm_token_sim_${const Uuid().v4().substring(0, 8)}';
   }
 

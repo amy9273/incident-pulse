@@ -140,9 +140,9 @@ class _MainNavigationShellState extends ConsumerState<MainNavigationShell> {
                     id: alert.incidentId,
                     title: alert.title,
                     serviceId: alert.serviceName.toLowerCase().replaceAll(
-                      ' ',
-                      '-',
-                    ),
+                          ' ',
+                          '-',
+                        ),
                     serviceName: alert.serviceName,
                     status: IncidentStatus.triggered,
                     urgency: alert.urgency,
@@ -245,9 +245,7 @@ class _IncidentsTab extends ConsumerWidget {
           FilledButton(
             onPressed: () {
               Navigator.of(dialogCtx).pop();
-              ref
-                  .read(incidentsControllerProvider.notifier)
-                  .resolveIncident(
+              ref.read(incidentsControllerProvider.notifier).resolveIncident(
                     incident.id,
                     resolutionNote: noteController.text.trim(),
                   );
@@ -744,7 +742,6 @@ class _ProfileTab extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 32),
-
           Card(
             child: Column(
               children: [
@@ -771,7 +768,6 @@ class _ProfileTab extends ConsumerWidget {
               ],
             ),
           ),
-
           const SizedBox(height: 24),
           PrimaryButton(
             label: 'Sign Out',

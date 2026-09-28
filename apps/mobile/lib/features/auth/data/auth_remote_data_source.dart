@@ -43,7 +43,7 @@ class AuthRemoteDataSource {
     } on DioException catch (e) {
       final errorMsg = e.response?.data is Map<String, dynamic>
           ? (e.response!.data as Map<String, dynamic>)['message'] as String? ??
-                'Authentication failed'
+              'Authentication failed'
           : e.message ?? 'Network connection error';
       throw Exception(errorMsg);
     }
@@ -64,7 +64,7 @@ class AuthRemoteDataSource {
     } on DioException catch (e) {
       final errorMsg = e.response?.data is Map<String, dynamic>
           ? (e.response!.data as Map<String, dynamic>)['message'] as String? ??
-                'Failed to fetch user'
+              'Failed to fetch user'
           : e.message ?? 'Network error';
       throw Exception(errorMsg);
     }
