@@ -21,12 +21,10 @@ class _RawPayloadViewerWidgetState extends State<RawPayloadViewerWidget> {
   String _buildAttributeSummary() {
     if (widget.payload == null || widget.payload!.isEmpty) return '';
     final keys = widget.payload!.keys.take(3).toList();
-    final parts = keys
-        .map((k) {
-          final val = widget.payload![k];
-          return '$k: $val';
-        })
-        .join(' • ');
+    final parts = keys.map((k) {
+      final val = widget.payload![k];
+      return '$k: $val';
+    }).join(' • ');
     return parts;
   }
 

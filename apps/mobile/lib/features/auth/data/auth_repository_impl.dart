@@ -12,8 +12,8 @@ class AuthRepositoryImpl implements IAuthRepository {
   AuthRepositoryImpl({
     required AuthRemoteDataSource remoteDataSource,
     required SecureStorageService storageService,
-  }) : _remoteDataSource = remoteDataSource,
-       _storageService = storageService;
+  })  : _remoteDataSource = remoteDataSource,
+        _storageService = storageService;
 
   @override
   Future<AuthState> login({

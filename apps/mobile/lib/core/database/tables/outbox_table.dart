@@ -14,8 +14,7 @@ class OutboxTable {
   static const String colRetryCount = 'retry_count';
   static const String colLastError = 'last_error';
 
-  static const String createTableSql =
-      '''
+  static const String createTableSql = '''
     CREATE TABLE IF NOT EXISTS $tableName (
       $colId TEXT PRIMARY KEY,
       $colIncidentId TEXT NOT NULL,
@@ -28,8 +27,7 @@ class OutboxTable {
     );
   ''';
 
-  static const String createPendingIndexSql =
-      '''
+  static const String createPendingIndexSql = '''
     CREATE INDEX IF NOT EXISTS idx_outbox_status_created ON $tableName ($colStatus, $colCreatedAt ASC);
   ''';
 }

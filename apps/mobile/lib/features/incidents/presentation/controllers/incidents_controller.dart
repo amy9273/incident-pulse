@@ -144,6 +144,6 @@ class IncidentsController extends StateNotifier<IncidentsState> {
 
 final incidentsControllerProvider =
     StateNotifierProvider<IncidentsController, IncidentsState>((ref) {
-      final repo = ref.watch(incidentRepositoryProvider);
-      return IncidentsController(repo);
-    });
+  final repo = ref.watch(incidentRepositoryProvider);
+  return IncidentsController(repo);
+});

@@ -11,8 +11,8 @@ class OutboxSyncService {
   OutboxSyncService({
     required IncidentLocalDataSource localDataSource,
     required IncidentRemoteDataSource remoteDataSource,
-  }) : _localDataSource = localDataSource,
-       _remoteDataSource = remoteDataSource;
+  })  : _localDataSource = localDataSource,
+        _remoteDataSource = remoteDataSource;
 
   /// Sync all pending outbox actions. Returns the number of synced items.
   Future<int> syncOutbox() async {

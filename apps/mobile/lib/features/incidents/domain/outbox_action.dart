@@ -65,9 +65,8 @@ class OutboxAction {
     Map<String, dynamic>? parsedPayload;
     if (row[OutboxTable.colPayload] != null) {
       try {
-        parsedPayload =
-            jsonDecode(row[OutboxTable.colPayload] as String)
-                as Map<String, dynamic>;
+        parsedPayload = jsonDecode(row[OutboxTable.colPayload] as String)
+            as Map<String, dynamic>;
       } catch (_) {}
     }
 

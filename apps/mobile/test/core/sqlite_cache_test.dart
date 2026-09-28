@@ -75,8 +75,8 @@ void main() {
           await txn.update(
             IncidentTable.tableName,
             {
-              IncidentTable.colStatus: IncidentStatus.acknowledged.name
-                  .toUpperCase(),
+              IncidentTable.colStatus:
+                  IncidentStatus.acknowledged.name.toUpperCase(),
               IncidentTable.colAcknowledgedAt: now.toIso8601String(),
               IncidentTable.colUpdatedAt: now.toIso8601String(),
               IncidentTable.colIsLocallyUpdated: 1,

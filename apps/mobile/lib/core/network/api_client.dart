@@ -9,8 +9,7 @@ class ApiClient {
   final SecureStorageService storageService;
 
   ApiClient({required this.storageService, String? baseUrl}) {
-    final effectiveBaseUrl =
-        baseUrl ??
+    final effectiveBaseUrl = baseUrl ??
         storageService.getCustomApiUrl() ??
         ApiEndpoints.defaultBaseUrl;
 

@@ -14,9 +14,9 @@ class IncidentRepositoryImpl implements IIncidentRepository {
     required IncidentLocalDataSource localDataSource,
     required IncidentRemoteDataSource remoteDataSource,
     required OutboxSyncService syncService,
-  }) : _localDataSource = localDataSource,
-       _remoteDataSource = remoteDataSource,
-       _syncService = syncService;
+  })  : _localDataSource = localDataSource,
+        _remoteDataSource = remoteDataSource,
+        _syncService = syncService;
 
   @override
   Future<List<IncidentModel>> getIncidents({bool forceRefresh = false}) async {

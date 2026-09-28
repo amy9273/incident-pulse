@@ -22,9 +22,9 @@ class SkeletonWidget extends StatefulWidget {
   });
 
   const SkeletonWidget.circular({super.key, required double size})
-    : width = size,
-      height = size,
-      borderRadius = size / 2;
+      : width = size,
+        height = size,
+        borderRadius = size / 2;
 
   @override
   State<SkeletonWidget> createState() => _SkeletonWidgetState();

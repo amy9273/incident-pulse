@@ -31,8 +31,7 @@ class PrimaryButton extends StatelessWidget {
     final colors = context.colors;
     final theme = Theme.of(context);
 
-    final resolvedBg =
-        backgroundColor ??
+    final resolvedBg = backgroundColor ??
         (isDestructive ? colors.triggered : theme.colorScheme.primary);
     final resolvedText = textColor ?? Colors.white;
 
