@@ -28,5 +28,5 @@ jobs:
       - name: Run Keepalive Ping
         run: npx tsx scripts/keepalive-ping.ts
         env:
-          REDIS_URL: ${{ secrets.REDIS_URL || 'redis://default:2MlpHoYSdKphNrkoY5hHqtO0u4oy2hQL@cattle-ring-neosleek-18395.db.redis.io:13215' }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://neondb_owner:npg_GIpVufq35TCY@ep-floral-shape-az9d6nyx-pooler.c-3.ap-southeast-1.aws.neon.tech/neondb?sslmode=require' }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
