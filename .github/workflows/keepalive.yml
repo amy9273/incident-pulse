@@ -1,0 +1,32 @@
+name: Cloud Database Keepalive Ping
+
+on:
+  schedule:
+    # Run every 3 days at 04:00 UTC (prevents Redis Cloud 14-day inactivity deletion)
+    - cron: "0 4 */3 * *"
+  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+
+jobs:
+  keepalive:
+    name: Heartbeat Ping (Redis & Neon)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Keepalive Ping
+        run: npx tsx scripts/keepalive-ping.ts
+        env:
+          REDIS_URL: ${{ secrets.REDIS_URL || 'redis://default:2MlpHoYSdKphNrkoY5hHqtO0u4oy2hQL@cattle-ring-neosleek-18395.db.redis.io:13215' }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://neondb_owner:npg_GIpVufq35TCY@ep-floral-shape-az9d6nyx-pooler.c-3.ap-southeast-1.aws.neon.tech/neondb?sslmode=require' }}
