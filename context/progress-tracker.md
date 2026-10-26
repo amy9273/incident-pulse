@@ -8,9 +8,9 @@ _Update this file after every meaningful implementation step or architectural de
 
 - **Project Status: IN PROGRESS (Phase 6: Production Hardening, Distributed Reliability & Security Remediation)**
   - Completed: **Unit 17: Security Hardening, RBAC Guards & Secret Protection**
-  - Next: **Unit 18: Queue Reliability, Concurrency & State Machine Integrity**
+  - Completed: **Unit 18: Queue Reliability, Concurrency & State Machine Integrity**
+  - Next: **Unit 19: Mobile Offline Reconciliation, Safe Logout & Client RBAC**
   - Planned:
-    - Unit 19: Mobile Offline Reconciliation, Safe Logout & Client RBAC
     - Unit 20: Web Edge Middleware, Real-Time Reconnection & Operational Guardrails
 
 ---
@@ -36,12 +36,12 @@ _Update this file after every meaningful implementation step or architectural de
 - [x] **Unit 15: Showcase Assets & Interactive Demo Script**: Delivered comprehensive portfolio documentation in root `README.md` with system architecture diagrams (Mermaid), OpenAPI 3.0 specification & interactive Swagger UI at `/api/v1/docs`, and automated 60-second end-to-end incident lifecycle simulation script (`npm run simulate:incident`).
 - [x] **Unit 16: UI/UX & Ergonomics Overhaul (Web & Mobile)**: Delivered complete visual and ergonomic elevation across both platforms: real-time alert row flash animation, Web Audio API emergency chime synthesizer, syntax-highlighted JSON inspector with 1-click clipboard copy, schedule "Now" cursor and shift handoff countdown badge, 24h segmented service uptime history bar, login screen avatar initials and role badge pills, mobile dynamic safe-area insets on sticky action buttons, swipe-to-acknowledge gesture on incident cards with haptics, collapsible payload summary viewer, and interactive on-call rotation card.
 - [x] **Unit 17: Security Hardening, RBAC Guards & Secret Protection**: Remediated critical access control and secret exposure vulnerabilities identified in security audit: restricted incident acknowledge and resolve mutations to `ADMIN` and `RESPONDER` (DEF-01); restricted schedule creation, shift additions, and shift deletions to `ADMIN` (DEF-02); implemented cryptographic service key masking (`inc_live_••••••••XXXX`) for non-admin viewers on `GET /services` and `GET /services/:id` (DEF-03); prioritized header-first webhook authentication (`Authorization: Bearer <key>` and `x-service-key`) with CWE-598 URL deprecation logging (DEF-10); implemented sliding-window API rate limiting middleware on `/login` (15 req/min) and `/webhooks` (120 req/min) with standard RateLimit headers and 429 exceptions (DEF-13); added Redis reconnection backoff limit (10 attempts) to prevent infinite event loop reconnect stalls (DEF-07); and added dedicated integration test suite (`unit17-security.test.ts`) achieving 100% pass rate (88/88 tests).
+- [x] **Unit 18: Queue Reliability, Concurrency & State Machine Integrity**: Remediated queue reliability, stalled job recovery, and race condition vulnerabilities: configured BullMQ retry policy with exponential backoff (5 attempts, 2000ms delay) and DLQ routing to `escalation-dlq` (DEF-06); added worker stalled-job recovery (`stalledInterval: 30000`, `maxStalledCount: 2`) and clean shutdown (DEF-04); implemented atomic conditional updates (`updateMany` with status guard) in `acknowledgeIncident` and `resolveIncident` completely eliminating duplicate audit logs and state corruption under concurrent race conditions (DEF-05); guarded auto-escalation against duplicate or out-of-order execution and moved transaction side-effects outside database lock boundaries (DEF-08); and verified 100% pass rate across all 95 API tests.
 
 ---
 
 ## Next Up
 
-- [ ] **Unit 18: Queue Reliability, Concurrency & State Machine Integrity**
 - [ ] **Unit 19: Mobile Offline Reconciliation, Safe Logout & Client RBAC**
 - [ ] **Unit 20: Web Edge Middleware, Real-Time Reconnection & Operational Guardrails**
 

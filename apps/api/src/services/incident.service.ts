@@ -180,31 +180,40 @@ export class IncidentService {
           );
         }
 
-        const acked = await tx.incident.update({
-          where: { id },
+        // Atomic conditional update to guard against concurrent race conditions
+        const updateResult = await tx.incident.updateMany({
+          where: {
+            id,
+            status: IncidentStatus.TRIGGERED,
+          },
           data: {
             status: IncidentStatus.ACKNOWLEDGED,
             acknowledgedAt: new Date(),
             assigneeId: incident.assigneeId ?? actor.id,
           },
+        });
+
+        if (updateResult.count > 0) {
+          // Exactly one concurrent transaction won the race and appends the audit log
+          await tx.incidentLog.create({
+            data: {
+              incidentId: id,
+              actorId: actor.id,
+              action: IncidentLogAction.ACKNOWLEDGED,
+              message: note
+                ? `Acknowledged by ${actor.name}: ${note}`
+                : `Acknowledged by ${actor.name}`,
+            },
+          });
+        }
+
+        return await tx.incident.findUniqueOrThrow({
+          where: { id },
           include: {
             service: { select: { id: true, name: true } },
             assignee: { select: { id: true, name: true, email: true } },
           },
         });
-
-        await tx.incidentLog.create({
-          data: {
-            incidentId: id,
-            actorId: actor.id,
-            action: IncidentLogAction.ACKNOWLEDGED,
-            message: note
-              ? `Acknowledged by ${actor.name}: ${note}`
-              : `Acknowledged by ${actor.name}`,
-          },
-        });
-
-        return acked;
       },
     );
 
@@ -239,30 +248,39 @@ export class IncidentService {
           throw new NotFoundError(`Incident with ID ${id} not found`);
         }
 
-        const resolved = await tx.incident.update({
-          where: { id },
+        // Atomic conditional update to guard against concurrent race conditions
+        const updateResult = await tx.incident.updateMany({
+          where: {
+            id,
+            status: { not: IncidentStatus.RESOLVED },
+          },
           data: {
             status: IncidentStatus.RESOLVED,
             resolvedAt: new Date(),
           },
+        });
+
+        if (updateResult.count > 0) {
+          // Exactly one concurrent transaction won the race and appends the audit log
+          await tx.incidentLog.create({
+            data: {
+              incidentId: id,
+              actorId: actor.id,
+              action: IncidentLogAction.RESOLVED,
+              message: resolutionNotes
+                ? `Resolved by ${actor.name}: ${resolutionNotes}`
+                : `Resolved by ${actor.name}`,
+            },
+          });
+        }
+
+        return await tx.incident.findUniqueOrThrow({
+          where: { id },
           include: {
             service: { select: { id: true, name: true } },
             assignee: { select: { id: true, name: true, email: true } },
           },
         });
-
-        await tx.incidentLog.create({
-          data: {
-            incidentId: id,
-            actorId: actor.id,
-            action: IncidentLogAction.RESOLVED,
-            message: resolutionNotes
-              ? `Resolved by ${actor.name}: ${resolutionNotes}`
-              : `Resolved by ${actor.name}`,
-          },
-        });
-
-        return resolved;
       },
     );
 
