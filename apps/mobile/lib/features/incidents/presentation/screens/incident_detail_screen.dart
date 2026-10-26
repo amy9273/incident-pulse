@@ -6,6 +6,7 @@ import 'package:mobile/core/theme/app_colors.dart';
 import 'package:mobile/core/theme/app_typography.dart';
 import 'package:mobile/core/widgets/primary_button.dart';
 import 'package:mobile/core/widgets/status_badge_widget.dart';
+import 'package:mobile/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:mobile/features/incidents/domain/incident_model.dart';
 import 'package:mobile/features/incidents/presentation/controllers/incidents_controller.dart';
 import 'package:mobile/features/incidents/presentation/widgets/incident_audit_timeline_widget.dart';
@@ -16,8 +17,13 @@ import 'package:mobile/features/incidents/presentation/widgets/raw_payload_viewe
 /// sticky 56dp fat-finger action buttons, and haptic feedback.
 class IncidentDetailScreen extends ConsumerStatefulWidget {
   final IncidentModel incident;
+  final bool? isReadOnly;
 
-  const IncidentDetailScreen({super.key, required this.incident});
+  const IncidentDetailScreen({
+    super.key,
+    required this.incident,
+    this.isReadOnly,
+  });
 
   @override
   ConsumerState<IncidentDetailScreen> createState() =>
@@ -378,6 +384,46 @@ class _IncidentDetailScreenState extends ConsumerState<IncidentDetailScreen> {
                 'Incident Resolved',
                 style: AppTypography.labelLarge.copyWith(
                   color: AppColors.resolved,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    bool isViewer = widget.isReadOnly ?? false;
+    if (widget.isReadOnly == null) {
+      try {
+        final authState = ref.watch(authControllerProvider);
+        isViewer = authState.user?.role.toUpperCase() == 'VIEWER';
+      } catch (_) {
+        isViewer = false;
+      }
+    }
+
+    if (isViewer) {
+      return Container(
+        height: 56,
+        decoration: BoxDecoration(
+          color: AppColors.darkSurfaceSecondary,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.darkBorder),
+        ),
+        child: Center(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.visibility_outlined,
+                color: AppColors.darkTextSecondary,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Read-Only Access (Viewer)',
+                style: AppTypography.labelLarge.copyWith(
+                  color: AppColors.darkTextSecondary,
                 ),
               ),
             ],

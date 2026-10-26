@@ -31,8 +31,11 @@ import { RotateKeyModal } from "@/components/services/RotateKeyModal";
 import { ServiceIntegrationDrawer } from "@/components/services/ServiceIntegrationDrawer";
 import { ServiceUptimeBar } from "@/components/services/ServiceUptimeBar";
 import { ServiceListItem } from "@incident-pulse/shared";
+import { useAuth } from "@/context/AuthContext";
 
 export default function ServicesPage() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
   const { data: services, isLoading, isError, error, refetch } = useServices();
   const deleteServiceMutation = useDeleteService();
 
@@ -172,7 +175,14 @@ export default function ServicesPage() {
               escalation policies.
             </p>
           </div>
-          <Button size="sm" onClick={() => setIsCreateModalOpen(true)}>
+          <Button
+            size="sm"
+            disabled={!isAdmin}
+            title={
+              !isAdmin ? "Admin role required to create services" : undefined
+            }
+            onClick={() => setIsCreateModalOpen(true)}
+          >
             <Plus className="mr-1.5 h-4 w-4" /> Add Service
           </Button>
         </div>
@@ -231,7 +241,14 @@ export default function ServicesPage() {
         </div>
 
         <div className="flex items-center gap-2.5">
-          <Button size="sm" onClick={() => setIsCreateModalOpen(true)}>
+          <Button
+            size="sm"
+            disabled={!isAdmin}
+            title={
+              !isAdmin ? "Admin role required to create services" : undefined
+            }
+            onClick={() => setIsCreateModalOpen(true)}
+          >
             <Plus className="mr-1.5 h-4 w-4" /> Add Service
           </Button>
         </div>
@@ -408,25 +425,29 @@ export default function ServicesPage() {
                   </div>
 
                   <div className="flex items-center gap-1.5">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 text-xs"
-                      onClick={() => setRotateKeyService(srv)}
-                      title="Rotate integration key"
-                    >
-                      <RefreshCw className="h-3 w-3" />
-                    </Button>
+                    {isAdmin && (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs"
+                          onClick={() => setRotateKeyService(srv)}
+                          title="Rotate integration key"
+                        >
+                          <RefreshCw className="h-3 w-3" />
+                        </Button>
 
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 text-xs"
-                      onClick={() => handleDeleteService(srv)}
-                      title="Delete service"
-                    >
-                      <Trash2 className="h-3 w-3 text-destructive" />
-                    </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs"
+                          onClick={() => handleDeleteService(srv)}
+                          title="Delete service"
+                        >
+                          <Trash2 className="h-3 w-3 text-destructive" />
+                        </Button>
+                      </>
+                    )}
 
                     <Button
                       size="sm"

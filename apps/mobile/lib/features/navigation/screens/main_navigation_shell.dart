@@ -262,6 +262,8 @@ class _IncidentsTab extends ConsumerWidget {
     final colors = context.colors;
     final incidentsState = ref.watch(incidentsControllerProvider);
     final controller = ref.read(incidentsControllerProvider.notifier);
+    final authState = ref.watch(authControllerProvider);
+    final isViewer = authState.user?.role.toUpperCase() == 'VIEWER';
 
     return RefreshIndicator(
       onRefresh: () => controller.loadIncidents(forceRefresh: true),
@@ -388,11 +390,14 @@ class _IncidentsTab extends ConsumerWidget {
                 padding: const EdgeInsets.only(bottom: 12),
                 child: IncidentCardWidget(
                   incident: incident,
+                  isReadOnly: isViewer,
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) =>
-                            IncidentDetailScreen(incident: incident),
+                        builder: (_) => IncidentDetailScreen(
+                          incident: incident,
+                          isReadOnly: isViewer,
+                        ),
                       ),
                     );
                   },

@@ -1,10 +1,13 @@
+import '../network/api_client.dart';
 import '../../features/incidents/data/incident_local_data_source.dart';
 import '../../features/incidents/data/incident_remote_data_source.dart';
 import '../../features/incidents/domain/outbox_action.dart';
 
 /// Service responsible for draining and synchronizing the transactional outbox queue.
-/// Invariant #5: Offline Action Safety.
+/// Invariant #5: Offline Action Safety (DEF-09).
 class OutboxSyncService {
+  static const int maxRetries = 5;
+
   final IncidentLocalDataSource _localDataSource;
   final IncidentRemoteDataSource _remoteDataSource;
 
@@ -50,15 +53,47 @@ class OutboxSyncService {
         await _localDataSource.deleteOutboxAction(action.id);
         await _localDataSource.markIncidentSynced(action.incidentId);
         syncedCount++;
-      } catch (e) {
-        // Action failed: record error and increment retry count for backoff
+      } on ApiException catch (e) {
+        final statusCode = e.statusCode;
+        final isTerminal = statusCode != null &&
+            (statusCode == 400 ||
+                statusCode == 401 ||
+                statusCode == 403 ||
+                statusCode == 404 ||
+                statusCode == 409);
+
+        final nextRetry = action.retryCount + 1;
+        final isFailed = isTerminal || nextRetry >= maxRetries;
+
         await _localDataSource.updateOutboxAction(
           action.copyWith(
-            status: OutboxStatus.failed,
-            retryCount: action.retryCount + 1,
-            lastError: e.toString().replaceFirst('Exception: ', ''),
+            status: isFailed ? OutboxStatus.failed : OutboxStatus.pending,
+            retryCount: nextRetry,
+            lastError: e.message,
           ),
         );
+
+        // If permanently failed, release the local optimistic lock
+        // so subsequent server syncs restore true backend state
+        if (isFailed) {
+          await _localDataSource.markIncidentSynced(action.incidentId);
+        }
+      } catch (e) {
+        final errorMsg = e.toString().replaceFirst('Exception: ', '');
+        final nextRetry = action.retryCount + 1;
+        final isFailed = nextRetry >= maxRetries;
+
+        await _localDataSource.updateOutboxAction(
+          action.copyWith(
+            status: isFailed ? OutboxStatus.failed : OutboxStatus.pending,
+            retryCount: nextRetry,
+            lastError: errorMsg,
+          ),
+        );
+
+        if (isFailed) {
+          await _localDataSource.markIncidentSynced(action.incidentId);
+        }
       }
     }
 

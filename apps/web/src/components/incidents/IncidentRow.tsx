@@ -10,6 +10,7 @@ import { Button } from "../ui/Button";
 import { Layers, User, Clock, ShieldAlert, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSocket } from "@/context/SocketContext";
+import { useAuth } from "@/context/AuthContext";
 
 interface IncidentRowProps {
   incident: IncidentDetail;
@@ -39,6 +40,8 @@ export function IncidentRow({
   isAckLoading = false,
   isResolveLoading = false,
 }: IncidentRowProps) {
+  const { user } = useAuth();
+  const isViewer = user?.role === "VIEWER";
   const { recentlyCreatedIncidentId } = useSocket();
   const isTriggered = incident.status === IncidentStatus.TRIGGERED;
   const isAck = incident.status === IncidentStatus.ACKNOWLEDGED;
@@ -121,10 +124,22 @@ export function IncidentRow({
         className="flex items-center gap-2 shrink-0"
         onClick={(e) => e.stopPropagation()}
       >
+        {isViewer && (
+          <span className="text-[10px] text-muted-foreground px-2 py-1 rounded bg-secondary/60 border border-border font-medium">
+            Read-Only
+          </span>
+        )}
+
         {isTriggered && (
           <Button
             size="sm"
             variant="default"
+            disabled={isViewer}
+            title={
+              isViewer
+                ? "Viewer accounts have read-only access"
+                : "Acknowledge incident"
+            }
             isLoading={isAckLoading}
             onClick={(e) => onAcknowledge(incident.id, e)}
           >
@@ -136,6 +151,12 @@ export function IncidentRow({
           <Button
             size="sm"
             variant="status-resolved"
+            disabled={isViewer}
+            title={
+              isViewer
+                ? "Viewer accounts have read-only access"
+                : "Resolve incident"
+            }
             isLoading={isResolveLoading}
             onClick={(e) => onResolve(incident.id, e)}
           >

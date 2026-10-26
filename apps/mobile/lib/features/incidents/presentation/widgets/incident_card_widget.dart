@@ -12,6 +12,7 @@ class IncidentCardWidget extends StatelessWidget {
   final VoidCallback onAcknowledge;
   final VoidCallback onResolve;
   final VoidCallback? onTap;
+  final bool isReadOnly;
 
   const IncidentCardWidget({
     super.key,
@@ -19,6 +20,7 @@ class IncidentCardWidget extends StatelessWidget {
     required this.onAcknowledge,
     required this.onResolve,
     this.onTap,
+    this.isReadOnly = false,
   });
 
   String _formatDuration(DateTime dt) {
@@ -186,8 +188,40 @@ class IncidentCardWidget extends StatelessWidget {
                         ],
                       ),
 
-                      // Triage Action Buttons (56dp Fat-finger emergency trigger)
-                      if (incident.status == IncidentStatus.triggered) ...[
+                      // Triage Action Buttons or Read-Only Indicator (DEF-12)
+                      if (isReadOnly) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colors.surfaceSecondary,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: colors.border),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.visibility_outlined,
+                                size: 14,
+                                color: colors.textSecondary,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Read-Only (Viewer)',
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: colors.textSecondary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ] else if (incident.status ==
+                          IncidentStatus.triggered) ...[
                         const SizedBox(height: 14),
                         PrimaryButton(
                           label: 'Acknowledge Incident',
@@ -230,7 +264,7 @@ class IncidentCardWidget extends StatelessWidget {
       ),
     );
 
-    if (incident.status == IncidentStatus.triggered) {
+    if (!isReadOnly && incident.status == IncidentStatus.triggered) {
       return Dismissible(
         key: ValueKey('incident-card-dismiss-${incident.id}'),
         direction: DismissDirection.startToEnd,
