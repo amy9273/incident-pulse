@@ -4,12 +4,24 @@ import {
   IncidentStatus,
   ServiceListItem,
   UpdateServiceRequest,
+  UserRole,
 } from "@incident-pulse/shared";
 import { prisma } from "../lib/prisma.js";
 import { BadRequestError, NotFoundError } from "../errors/index.js";
 import { logger } from "../lib/logger.js";
 
 export class ServiceService {
+  /**
+   * Masks a service API key for non-administrative viewing.
+   * e.g., inc_live_94f83b2a1c0d4e5f -> inc_live_••••••••4e5f
+   */
+  public maskServiceKey(key: string): string {
+    if (!key) return "••••••••";
+    const prefix = key.startsWith("inc_live_") ? "inc_live_" : key.slice(0, 4);
+    const suffix = key.length >= 4 ? key.slice(-4) : "";
+    return `${prefix}••••••••${suffix}`;
+  }
+
   /**
    * Generates a cryptographically secure service API key.
    */
@@ -30,8 +42,10 @@ export class ServiceService {
 
   /**
    * List all active monitored services with health metrics and escalation policy summary.
+   * Non-admins receive masked service keys to prevent unauthorized alert ingestion.
    */
-  async listServices(): Promise<ServiceListItem[]> {
+  async listServices(callerRole?: UserRole): Promise<ServiceListItem[]> {
+    const shouldMask = callerRole !== UserRole.ADMIN;
     const services = await prisma.service.findMany({
       where: { deletedAt: null },
       include: {
@@ -76,7 +90,9 @@ export class ServiceService {
         name: srv.name,
         slug: srv.slug,
         description: srv.description,
-        serviceKey: srv.serviceKey,
+        serviceKey: shouldMask
+          ? this.maskServiceKey(srv.serviceKey)
+          : srv.serviceKey,
         escalationPolicyId: srv.escalationPolicyId,
         escalationPolicy: {
           id: srv.escalationPolicy.id,
@@ -103,8 +119,10 @@ export class ServiceService {
 
   /**
    * Retrieves a single service by ID with detailed escalation rules and recent incidents.
+   * Non-admins receive masked service keys to prevent unauthorized alert ingestion.
    */
-  async getServiceById(id: string) {
+  async getServiceById(id: string, callerRole?: UserRole) {
+    const shouldMask = callerRole !== UserRole.ADMIN;
     const service = await prisma.service.findFirst({
       where: { id, deletedAt: null },
       include: {
@@ -158,7 +176,9 @@ export class ServiceService {
       name: service.name,
       slug: service.slug,
       description: service.description,
-      serviceKey: service.serviceKey,
+      serviceKey: shouldMask
+        ? this.maskServiceKey(service.serviceKey)
+        : service.serviceKey,
       escalationPolicyId: service.escalationPolicyId,
       escalationPolicy: {
         id: service.escalationPolicy.id,

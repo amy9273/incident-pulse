@@ -3,6 +3,7 @@ import { WebhookAlertSchema } from "@incident-pulse/shared";
 import { webhookController } from "../controllers/webhook.controller.js";
 import { authenticateServiceKey } from "../middlewares/service-key.middleware.js";
 import { validateBody } from "../middlewares/validate.middleware.js";
+import { webhookRateLimiter } from "../middlewares/rate-limit.middleware.js";
 
 const router = Router();
 
@@ -10,6 +11,7 @@ const router = Router();
 router.post(
   "/services/:serviceKey",
   authenticateServiceKey,
+  webhookRateLimiter,
   validateBody(WebhookAlertSchema),
   webhookController.handleServiceWebhook.bind(webhookController),
 );
@@ -18,6 +20,7 @@ router.post(
 router.post(
   "/alert",
   authenticateServiceKey,
+  webhookRateLimiter,
   validateBody(WebhookAlertSchema),
   webhookController.handleServiceWebhook.bind(webhookController),
 );

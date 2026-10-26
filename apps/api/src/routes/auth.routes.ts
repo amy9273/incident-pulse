@@ -3,11 +3,13 @@ import { LoginRequestSchema } from "@incident-pulse/shared";
 import { authController } from "../controllers/auth.controller.js";
 import { authenticateJwt } from "../middlewares/auth.middleware.js";
 import { validateBody } from "../middlewares/validate.middleware.js";
+import { loginRateLimiter } from "../middlewares/rate-limit.middleware.js";
 
 const router = Router();
 
 router.post(
   "/login",
+  loginRateLimiter,
   validateBody(LoginRequestSchema),
   authController.login.bind(authController),
 );

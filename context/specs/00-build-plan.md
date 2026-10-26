@@ -117,3 +117,31 @@ This file defines the decomposed, verifiable units for IncidentPulse in their st
 - **What it builds**: Real-time incoming alert flash animations, Web Audio API emergency chime synthesizer, interactive syntax-highlighted JSON viewer with 1-click copy, visual schedule "Now" cursor and shift handoff countdown badge, 24h service uptime sparkline pills, mobile swipe-to-acknowledge triage gesture, safe-area button ergonomics, and interactive on-call rotation card.
 - **Dependencies**: Unit 15.
 - **Output**: Linear/Vercel/Apple-tier visual fidelity and operator ergonomics across web and mobile.
+
+---
+
+## Phase 6: Production Hardening, Distributed Reliability & Security Remediation
+
+### Unit 17: Security Hardening, RBAC Guards & Secret Protection
+
+- **What it builds**: Enforce strict Role-Based Access Control (RBAC) on incident state transitions (`POST /incidents/:id/acknowledge`, `POST /incidents/:id/resolve`) and on-call schedules/shifts (`POST /schedules`, `POST /schedules/:id/shifts`, `DELETE /schedules/:id/shifts/:shiftId`); redact/mask plaintext service integration keys for non-admin callers on `GET /services`; deprecate URL parameter API key ingestion in favor of header verification; implement endpoint rate limiting middleware.
+- **Dependencies**: Unit 16.
+- **Output**: Unprivileged users (VIEWER) cannot mutate incidents or schedules; service secrets masked; credential stuffing and alert floods rate-limited.
+
+### Unit 18: Queue Reliability, Concurrency & State Machine Integrity
+
+- **What it builds**: Configure BullMQ exponential backoff and retry limits (`attempts: 5`) on escalation jobs; guarantee state machine transition idempotency (protect MTTR metrics on duplicate resolve/acknowledge calls); add PostgreSQL partial unique index on open incident fingerprints (`WHERE status IN ('TRIGGERED', 'ACKNOWLEDGED')`) to eliminate concurrent ingestion race conditions; optimize escalation timer cancellation.
+- **Dependencies**: Unit 17.
+- **Output**: Zero duplicate incidents under burst alert traffic; resilient escalation worker surviving transient DB glitches; accurate MTTR calculations.
+
+### Unit 19: Mobile Offline Reconciliation, Safe Logout & Client RBAC
+
+- **What it builds**: Atomic local SQLite cache and outbox table purge on mobile logout to prevent multi-user data leakage and action cross-contamination; unrecoverable server conflict handling (`409 Conflict`) in `OutboxSyncService` to prevent permanent split-brain desynchronization; client-side RBAC guard on triage trigger buttons.
+- **Dependencies**: Unit 18.
+- **Output**: Pristine mobile state across logout cycles; automatic recovery from server conflicts without frozen local updates.
+
+### Unit 20: Web Edge Middleware, Real-Time Reconnection & Operational Guardrails
+
+- **What it builds**: Next.js Edge Middleware (`middleware.ts`) for server-side route protection; Socket.io client automatic query cache invalidation on reconnection; production safety guardrails preventing accidental `seed()` data wipes on remote databases; CLI simulation standalone worker execution.
+- **Dependencies**: Unit 19.
+- **Output**: Enterprise-grade defense-in-depth across web and operational tooling.
