@@ -14,6 +14,7 @@ import "./schedule.test.js";
 import "./service.test.js";
 import "./unit17-security.test.js";
 import "./unit18-queue-concurrency.test.js";
+import "./unit20-operational-guardrails.test.js";
 
 // Global teardown to cleanly close all persistent singleton connections
 after(async () => {
