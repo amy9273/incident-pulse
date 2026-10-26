@@ -13,6 +13,7 @@ import {
   User,
   Plus,
 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 function formatShiftCountdown(endTimeStr: string): string {
   const diffMs = new Date(endTimeStr).getTime() - Date.now();
@@ -43,6 +44,8 @@ export function ScheduleTimeline({
   onDeleteShift,
   isDeletingShift = false,
 }: ScheduleTimelineProps) {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
   const [weekOffset, setWeekOffset] = React.useState<number>(0);
 
   // Calculate 7-day window based on week offset
@@ -185,14 +188,16 @@ export function ScheduleTimeline({
             </Button>
           </div>
 
-          <Button
-            size="sm"
-            className="h-8 text-xs gap-1"
-            onClick={onAddShiftClick}
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Add Shift
-          </Button>
+          {isAdmin && (
+            <Button
+              size="sm"
+              className="h-8 text-xs gap-1"
+              onClick={onAddShiftClick}
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add Shift
+            </Button>
+          )}
         </div>
       </div>
 
@@ -273,14 +278,16 @@ export function ScheduleTimeline({
                             </span>
                           </div>
 
-                          <button
-                            onClick={() => onDeleteShift(shift.id)}
-                            disabled={isDeletingShift}
-                            className="text-muted-foreground hover:text-destructive p-0.5 rounded transition-colors"
-                            title="Delete shift"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </button>
+                          {isAdmin && (
+                            <button
+                              onClick={() => onDeleteShift(shift.id)}
+                              disabled={isDeletingShift}
+                              className="text-muted-foreground hover:text-destructive p-0.5 rounded transition-colors"
+                              title="Delete shift"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          )}
                         </div>
 
                         <div className="flex items-center gap-1 text-[10px] text-muted-foreground">

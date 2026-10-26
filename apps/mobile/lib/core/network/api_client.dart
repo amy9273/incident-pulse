@@ -34,3 +34,14 @@ class ApiClient {
     storageService.setCustomApiUrl(newUrl);
   }
 }
+
+/// Standardized API Exception preserving HTTP status code for offline reconciliation.
+class ApiException implements Exception {
+  final String message;
+  final int? statusCode;
+
+  ApiException(this.message, {this.statusCode});
+
+  @override
+  String toString() => message;
+}

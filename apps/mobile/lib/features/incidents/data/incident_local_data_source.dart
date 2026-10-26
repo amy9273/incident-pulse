@@ -158,11 +158,37 @@ class IncidentLocalDataSource {
     final db = await _db;
     final rows = await db.query(
       OutboxTable.tableName,
-      where: '${OutboxTable.colStatus} != ?',
-      whereArgs: [OutboxStatus.syncing.toDbString()],
+      where: '${OutboxTable.colStatus} = ?',
+      whereArgs: [OutboxStatus.pending.toDbString()],
       orderBy: '${OutboxTable.colCreatedAt} ASC',
     );
     return rows.map(OutboxAction.fromSqlite).toList();
+  }
+
+  /// Retrieve all failed outbox actions (dead-letter queue)
+  Future<List<OutboxAction>> getFailedOutboxActions() async {
+    final db = await _db;
+    final rows = await db.query(
+      OutboxTable.tableName,
+      where: '${OutboxTable.colStatus} = ?',
+      whereArgs: [OutboxStatus.failed.toDbString()],
+      orderBy: '${OutboxTable.colCreatedAt} ASC',
+    );
+    return rows.map(OutboxAction.fromSqlite).toList();
+  }
+
+  /// Reset failed outbox actions back to pending for retry
+  Future<void> retryFailedOutboxActions() async {
+    final db = await _db;
+    await db.update(
+      OutboxTable.tableName,
+      {
+        OutboxTable.colStatus: OutboxStatus.pending.toDbString(),
+        OutboxTable.colRetryCount: 0,
+      },
+      where: '${OutboxTable.colStatus} = ?',
+      whereArgs: [OutboxStatus.failed.toDbString()],
+    );
   }
 
   /// Count pending outbox actions

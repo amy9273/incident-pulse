@@ -24,8 +24,11 @@ import { ActiveOnCallSummary } from "@/components/schedules/ActiveOnCallSummary"
 import { ScheduleTimeline } from "@/components/schedules/ScheduleTimeline";
 import { CreateShiftModal } from "@/components/schedules/CreateShiftModal";
 import { CreateScheduleModal } from "@/components/schedules/CreateScheduleModal";
+import { useAuth } from "@/context/AuthContext";
 
 export default function SchedulesPage() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
   const {
     data: schedules,
     isLoading,
@@ -98,6 +101,10 @@ export default function SchedulesPage() {
             size="sm"
             variant="outline"
             className="gap-1.5 text-xs"
+            disabled={!isAdmin}
+            title={
+              !isAdmin ? "Admin role required to create schedules" : undefined
+            }
             onClick={() => setIsScheduleModalOpen(true)}
           >
             <Plus className="h-3.5 w-3.5" />
@@ -108,6 +115,10 @@ export default function SchedulesPage() {
             <Button
               size="sm"
               className="gap-1.5 text-xs"
+              disabled={!isAdmin}
+              title={
+                !isAdmin ? "Admin role required to assign shifts" : undefined
+              }
               onClick={() => setIsShiftModalOpen(true)}
             >
               <Plus className="h-3.5 w-3.5" />

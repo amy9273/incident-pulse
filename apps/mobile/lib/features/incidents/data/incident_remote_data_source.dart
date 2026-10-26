@@ -29,7 +29,7 @@ class IncidentRemoteDataSource {
           ? (e.response!.data as Map<String, dynamic>)['message'] as String? ??
               'Failed to fetch incidents'
           : e.message ?? 'Network error';
-      throw Exception(errorMsg);
+      throw ApiException(errorMsg, statusCode: e.response?.statusCode);
     }
   }
 
@@ -42,7 +42,7 @@ class IncidentRemoteDataSource {
 
       final data = response.data;
       if (data == null || data['incident'] == null) {
-        throw Exception('Incident not found');
+        throw ApiException('Incident not found', statusCode: 404);
       }
 
       return IncidentModel.fromJson(data['incident'] as Map<String, dynamic>);
@@ -51,7 +51,7 @@ class IncidentRemoteDataSource {
           ? (e.response!.data as Map<String, dynamic>)['message'] as String? ??
               'Failed to fetch incident'
           : e.message ?? 'Network error';
-      throw Exception(errorMsg);
+      throw ApiException(errorMsg, statusCode: e.response?.statusCode);
     }
   }
 
@@ -64,7 +64,7 @@ class IncidentRemoteDataSource {
           ? (e.response!.data as Map<String, dynamic>)['message'] as String? ??
               'Failed to acknowledge incident'
           : e.message ?? 'Network error';
-      throw Exception(errorMsg);
+      throw ApiException(errorMsg, statusCode: e.response?.statusCode);
     }
   }
 
@@ -83,7 +83,7 @@ class IncidentRemoteDataSource {
           ? (e.response!.data as Map<String, dynamic>)['message'] as String? ??
               'Failed to resolve incident'
           : e.message ?? 'Network error';
-      throw Exception(errorMsg);
+      throw ApiException(errorMsg, statusCode: e.response?.statusCode);
     }
   }
 }

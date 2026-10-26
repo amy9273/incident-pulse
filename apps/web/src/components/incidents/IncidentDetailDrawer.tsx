@@ -21,6 +21,7 @@ import {
   History,
   ShieldAlert,
 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 interface IncidentDetailDrawerProps {
   incident: IncidentDetail | null;
@@ -41,6 +42,9 @@ export function IncidentDetailDrawer({
   isAckLoading = false,
   isResolveLoading = false,
 }: IncidentDetailDrawerProps) {
+  const { user } = useAuth();
+  const isViewer = user?.role === "VIEWER";
+
   React.useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape" && isOpen) {
@@ -265,24 +269,33 @@ export function IncidentDetailDrawer({
             </div>
 
             <div className="flex items-center gap-2">
-              {isTriggered && (
-                <Button
-                  variant="default"
-                  isLoading={isAckLoading}
-                  onClick={() => onAcknowledge(incident.id)}
-                >
-                  Acknowledge Incident
-                </Button>
-              )}
+              {isViewer ? (
+                <span className="text-xs text-muted-foreground font-medium px-3 py-1.5 rounded-md bg-secondary/60 border border-border flex items-center gap-1.5">
+                  <ShieldAlert className="h-3.5 w-3.5 text-muted-foreground" />
+                  Read-Only Access (Viewer Account)
+                </span>
+              ) : (
+                <>
+                  {isTriggered && (
+                    <Button
+                      variant="default"
+                      isLoading={isAckLoading}
+                      onClick={() => onAcknowledge(incident.id)}
+                    >
+                      Acknowledge Incident
+                    </Button>
+                  )}
 
-              {(isTriggered || isAck) && (
-                <Button
-                  variant="status-resolved"
-                  isLoading={isResolveLoading}
-                  onClick={() => onResolve(incident.id)}
-                >
-                  Mark Resolved
-                </Button>
+                  {(isTriggered || isAck) && (
+                    <Button
+                      variant="status-resolved"
+                      isLoading={isResolveLoading}
+                      onClick={() => onResolve(incident.id)}
+                    >
+                      Mark Resolved
+                    </Button>
+                  )}
+                </>
               )}
             </div>
           </div>

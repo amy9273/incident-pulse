@@ -55,6 +55,9 @@ class AppDatabase {
     await db.delete(OutboxTable.tableName);
   }
 
+  /// Purges all cached tables on user logout (DEF-11).
+  Future<void> clearAllData() => clearAll();
+
   Future<void> close() async {
     if (_db != null && _db!.isOpen) {
       await _db!.close();

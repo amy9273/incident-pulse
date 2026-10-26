@@ -1,6 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../core/database/app_database.dart';
+import '../../../../core/database/database_provider.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/realtime/socket_provider.dart';
+import '../../../../core/realtime/socket_service.dart';
 import '../../../../core/storage/secure_storage_service.dart';
 import '../../data/auth_remote_data_source.dart';
 import '../../data/auth_repository_impl.dart';
@@ -83,8 +87,16 @@ final authRepositoryProvider = Provider<IAuthRepository>((ref) {
 
 class AuthController extends StateNotifier<AuthState> {
   final IAuthRepository _repository;
+  final AppDatabase? _appDatabase;
+  final SocketService? _socketService;
 
-  AuthController(this._repository) : super(AuthState.initial()) {
+  AuthController(
+    this._repository, {
+    AppDatabase? appDatabase,
+    SocketService? socketService,
+  })  : _appDatabase = appDatabase,
+        _socketService = socketService,
+        super(AuthState.initial()) {
     checkAuth();
   }
 
@@ -101,9 +113,16 @@ class AuthController extends StateNotifier<AuthState> {
     return result.isAuthenticated;
   }
 
+  /// Safe Logout Pipeline (DEF-11):
+  /// 1. Terminate WebSocket subscriptions
+  /// 2. Clear tokens from secure enclave / keychain
+  /// 3. Purge cached incidents & pending outbox actions from local SQLite
+  /// 4. Reset authentication state
   Future<void> logout() async {
     state = AuthState.loading();
+    _socketService?.disconnect();
     await _repository.logout();
+    await _appDatabase?.clearAllData();
     state = AuthState.unauthenticated();
   }
 }
@@ -111,6 +130,12 @@ class AuthController extends StateNotifier<AuthState> {
 final authControllerProvider = StateNotifierProvider<AuthController, AuthState>(
   (ref) {
     final repo = ref.watch(authRepositoryProvider);
-    return AuthController(repo);
+    final appDb = ref.watch(appDatabaseProvider);
+    final socket = ref.watch(socketServiceProvider);
+    return AuthController(
+      repo,
+      appDatabase: appDb,
+      socketService: socket,
+    );
   },
 );
