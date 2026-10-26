@@ -50,6 +50,21 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
     newSocket.on("connect", () => {
       setIsConnected(true);
+      // Operational resilience (DEF Finding 6.3 & Reliability Gap #3):
+      // On connection/reconnection, invalidate cached queries so the client immediately
+      // catches up with any incident mutations, auto-escalations, or shift updates
+      // that occurred during network blips or client sleep.
+      queryClient.invalidateQueries({ queryKey: ["incidents"] });
+      queryClient.invalidateQueries({ queryKey: ["schedules"] });
+      queryClient.invalidateQueries({ queryKey: ["services"] });
+    });
+
+    newSocket.io.on("reconnect", () => {
+      setIsConnected(true);
+      queryClient.invalidateQueries({ queryKey: ["incidents"] });
+      queryClient.invalidateQueries({ queryKey: ["schedules"] });
+      queryClient.invalidateQueries({ queryKey: ["services"] });
+      queryClient.invalidateQueries({ queryKey: ["incident"] });
     });
 
     newSocket.on("disconnect", () => {

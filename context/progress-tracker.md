@@ -6,12 +6,11 @@ _Update this file after every meaningful implementation step or architectural de
 
 ## Current Phase
 
-- **Project Status: IN PROGRESS (Phase 6: Production Hardening, Distributed Reliability & Security Remediation)**
+- **Project Status: COMPLETED (Phase 6: Production Hardening, Distributed Reliability & Security Remediation)**
   - Completed: **Unit 17: Security Hardening, RBAC Guards & Secret Protection**
   - Completed: **Unit 18: Queue Reliability, Concurrency & State Machine Integrity**
   - Completed: **Unit 19: Mobile Offline Reconciliation, Safe Logout & Client RBAC**
-  - Planned:
-    - Unit 20: Web Edge Middleware, Real-Time Reconnection & Operational Guardrails
+  - Completed: **Unit 20: Web Edge Middleware, Real-Time Reconnection & Operational Guardrails**
 
 ---
 
@@ -38,12 +37,13 @@ _Update this file after every meaningful implementation step or architectural de
 - [x] **Unit 17: Security Hardening, RBAC Guards & Secret Protection**: Remediated critical access control and secret exposure vulnerabilities identified in security audit: restricted incident acknowledge and resolve mutations to `ADMIN` and `RESPONDER` (DEF-01); restricted schedule creation, shift additions, and shift deletions to `ADMIN` (DEF-02); implemented cryptographic service key masking (`inc_live_••••••••XXXX`) for non-admin viewers on `GET /services` and `GET /services/:id` (DEF-03); prioritized header-first webhook authentication (`Authorization: Bearer <key>` and `x-service-key`) with CWE-598 URL deprecation logging (DEF-10); implemented sliding-window API rate limiting middleware on `/login` (15 req/min) and `/webhooks` (120 req/min) with standard RateLimit headers and 429 exceptions (DEF-13); added Redis reconnection backoff limit (10 attempts) to prevent infinite event loop reconnect stalls (DEF-07); and added dedicated integration test suite (`unit17-security.test.ts`) achieving 100% pass rate (88/88 tests).
 - [x] **Unit 18: Queue Reliability, Concurrency & State Machine Integrity**: Remediated queue reliability, stalled job recovery, and race condition vulnerabilities: configured BullMQ retry policy with exponential backoff (5 attempts, 2000ms delay) and DLQ routing to `escalation-dlq` (DEF-06); added worker stalled-job recovery (`stalledInterval: 30000`, `maxStalledCount: 2`) and clean shutdown (DEF-04); implemented atomic conditional updates (`updateMany` with status guard) in `acknowledgeIncident` and `resolveIncident` completely eliminating duplicate audit logs and state corruption under concurrent race conditions (DEF-05); guarded auto-escalation against duplicate or out-of-order execution and moved transaction side-effects outside database lock boundaries (DEF-08); and verified 100% pass rate across all 95 API tests.
 - [x] **Unit 19: Mobile Offline Reconciliation, Safe Logout & Client RBAC**: Remediated mobile client persistence leaks, offline sync deadlocks, and client role guardrails: implemented Safe Logout pipeline in Flutter (`AuthController.logout()`) terminating WebSocket subscriptions, clearing secure storage tokens, and purging SQLite cached tables (`AppDatabase.clearAllData()`) (DEF-11); classified offline sync errors in `OutboxSyncService` routing terminal 4xx errors (400, 401, 403, 404, 409) and retries exceeding 5 attempts directly to dead-letter `FAILED` state to prevent background worker deadlock (DEF-09); enforced client-side RBAC guards on Mobile (`IncidentCardWidget` and `IncidentDetailScreen` disabling mutations and rendering clear read-only indicators for `VIEWER` users) and Web (`IncidentRow`, `IncidentDetailDrawer`, `ServicesPage`, and `SchedulesPage` disabling unauthorized triage, key rotation, and schedule mutations) (DEF-12); and added comprehensive Flutter test suites (25/25 passing).
+- [x] **Unit 20: Web Edge Middleware, Real-Time Reconnection & Operational Guardrails**: Hardened web perimeter security, real-time reconnection ergonomics, and operational tooling: implemented Next.js Edge Middleware (`apps/web/src/middleware.ts`) enforcing server-side route boundary checks before static HTML shells are rendered to prevent unauthenticated flash; implemented automatic TanStack Query cache invalidation on Socket.io reconnection in `SocketContext.tsx` to reconcile missed state changes; added operational safety guardrail in `apps/api/src/seeds/seed.ts` preventing destructive `deleteMany()` wipes on remote databases (DEF-17); updated CLI simulation runner (`scripts/simulate-incident.ts`) with standalone BullMQ Escalation Worker instantiation and remote database safety checks; and added automated test suite (`unit20-operational-guardrails.test.ts`) achieving 100% pass rate.
 
 ---
 
 ## Next Up
 
-- [ ] **Unit 20: Web Edge Middleware, Real-Time Reconnection & Operational Guardrails**
+- All units in Phase 6 build plan are completed! IncidentPulse is production-hardened and audit-remediated.
 
 ---
 

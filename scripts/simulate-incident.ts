@@ -14,7 +14,11 @@ import { createApp } from "../apps/api/src/app.js";
 import { prisma } from "../apps/api/src/lib/prisma.js";
 import { redis } from "../apps/api/src/lib/redis.js";
 import { escalationQueue } from "../apps/api/src/lib/queue.js";
+import { createEscalationWorker } from "../apps/api/src/workers/escalation.worker.js";
+import { isRemoteDatabase } from "../apps/api/src/seeds/seed.js";
 import type { Server } from "node:http";
+import type { Worker } from "bullmq";
+import type { EscalationJobData } from "../apps/api/src/lib/queue.js";
 
 // ANSI Styling Helpers
 const bold = (s: string) => `\x1b[1m${s}\x1b[0m`;
@@ -41,7 +45,36 @@ ${dim("  ───────────────────────�
 ${bold("  Interactive 60-Second End-to-End Incident Escalation Walkthrough")}
 `);
 
+  // Operational Safety Guardrail (Finding DEF-17 & Section 8.2):
+  // Check whether database is remote/production before running simulation
+  const dbUrl = process.env.DATABASE_URL;
+  const isRemote = isRemoteDatabase(dbUrl);
+  const isProd = process.env.NODE_ENV === "production";
+  const allowSimulation =
+    process.env.ALLOW_SIMULATION === "true" || process.argv.includes("--force");
+
+  if ((isProd || isRemote) && !allowSimulation) {
+    const hostLabel = dbUrl
+      ? (() => {
+          try {
+            return new URL(dbUrl).hostname;
+          } catch {
+            return "remote host";
+          }
+        })()
+      : "remote host";
+    console.log(
+      yellow(
+        `\n⚠️  [Operational Safety Guardrail] Simulation configured to run against remote database (${hostLabel}).\n` +
+          `   Synthetic test alerts, incidents, and audit logs would be created on live infrastructure.\n` +
+          `   To authorize simulation on this environment, pass the --force flag or set ALLOW_SIMULATION=true.\n`,
+      ),
+    );
+    process.exit(0);
+  }
+
   let server: Server | null = null;
+  let escalationWorker: Worker<EscalationJobData> | null = null;
   let baseUrl = process.env.API_URL || "http://localhost:5000";
 
   // Check if an existing server is reachable at baseUrl
@@ -57,13 +90,14 @@ ${bold("  Interactive 60-Second End-to-End Incident Escalation Walkthrough")}
       throw new Error("Server returned non-200");
     }
   } catch {
-    // Start self-contained ephemeral server for zero-setup execution
+    // Start self-contained ephemeral server & worker for zero-setup execution
     const app = createApp();
     const port = 5055;
     baseUrl = `http://127.0.0.1:${port}`;
     server = app.listen(port);
+    escalationWorker = createEscalationWorker();
     console.log(
-      `${green("✔")} Launched self-contained simulation API server on ${cyan(baseUrl)}`,
+      `${green("✔")} Launched self-contained simulation API server & BullMQ Escalation Worker on ${cyan(baseUrl)}`,
     );
   }
 
@@ -396,6 +430,9 @@ ${dim("  ───────────────────────�
   } finally {
     if (server) {
       server.close();
+    }
+    if (escalationWorker) {
+      await escalationWorker.close();
     }
     await escalationQueue.close();
     await prisma.$disconnect();

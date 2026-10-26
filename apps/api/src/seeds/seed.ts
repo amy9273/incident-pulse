@@ -10,20 +10,81 @@ import {
 import { prisma } from "../lib/prisma.js";
 import { logger } from "../lib/logger.js";
 
-export async function seed() {
+/**
+ * Detects whether the specified connection string points to a remote/hosted database
+ * rather than an isolated local test instance (e.g. localhost, 127.0.0.1, Docker container).
+ */
+export function isRemoteDatabase(urlStr?: string): boolean {
+  if (!urlStr) return false;
+  try {
+    const parsed = new URL(urlStr);
+    const hostname = parsed.hostname.toLowerCase();
+    const localHosts = [
+      "localhost",
+      "127.0.0.1",
+      "::1",
+      "0.0.0.0",
+      "postgres",
+      "db",
+      "host.docker.internal",
+    ];
+    return !localHosts.includes(hostname);
+  } catch {
+    return false;
+  }
+}
+
+export interface SeedOptions {
+  /** Explicitly allow destructive wipe even if database is remote or NODE_ENV is production */
+  force?: boolean;
+  /** Whether to wipe existing records before inserting fixtures (defaults to true) */
+  clean?: boolean;
+}
+
+export async function seed(options: SeedOptions = {}) {
+  const { force = false, clean = true } = options;
+  const dbUrl = process.env.DATABASE_URL;
+  const isProd = process.env.NODE_ENV === "production";
+  const isRemote = isRemoteDatabase(dbUrl);
+  const allowReset = process.env.ALLOW_SEED_RESET === "true" || force;
+
+  // Operational Safety Guardrail (Finding DEF-17 & Section 9.2):
+  // Prevent accidental catastrophic data wipe on hosted/remote databases (e.g., AWS Neon, Supabase, RDS)
+  // unless explicitly authorized via ALLOW_SEED_RESET=true or { force: true }.
+  if (clean && (isProd || isRemote) && !allowReset) {
+    const hostLabel = dbUrl
+      ? (() => {
+          try {
+            return new URL(dbUrl).hostname;
+          } catch {
+            return "remote host";
+          }
+        })()
+      : "remote host";
+    const guardrailError = new Error(
+      `[Operational Safety Guardrail] Refusing to execute destructive database reset (deleteMany) on ${
+        isProd ? "production environment" : `remote database (${hostLabel})`
+      }. To authorize this operation, set environment variable ALLOW_SEED_RESET=true or pass { force: true }.`,
+    );
+    logger.error(guardrailError.message);
+    throw guardrailError;
+  }
+
   logger.info("🌱 Starting database seeding...");
 
-  // Clean existing data in reverse dependency order
-  await prisma.incidentLog.deleteMany();
-  await prisma.incident.deleteMany();
-  await prisma.service.deleteMany();
-  await prisma.escalationRule.deleteMany();
-  await prisma.escalationPolicy.deleteMany();
-  await prisma.scheduleShift.deleteMany();
-  await prisma.schedule.deleteMany();
-  await prisma.teamMembership.deleteMany();
-  await prisma.team.deleteMany();
-  await prisma.user.deleteMany();
+  if (clean) {
+    // Clean existing data in reverse dependency order
+    await prisma.incidentLog.deleteMany();
+    await prisma.incident.deleteMany();
+    await prisma.service.deleteMany();
+    await prisma.escalationRule.deleteMany();
+    await prisma.escalationPolicy.deleteMany();
+    await prisma.scheduleShift.deleteMany();
+    await prisma.schedule.deleteMany();
+    await prisma.teamMembership.deleteMany();
+    await prisma.team.deleteMany();
+    await prisma.user.deleteMany();
+  }
 
   const adminPasswordHash = await bcrypt.hash("AdminPassword123!", 10);
   const responderPasswordHash = await bcrypt.hash("ResponderPassword123!", 10);
