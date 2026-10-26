@@ -1,7 +1,7 @@
 import { after } from "node:test";
 import { prisma } from "../lib/prisma.js";
 import { redis } from "../lib/redis.js";
-import { escalationQueue } from "../lib/queue.js";
+import { escalationQueue, escalationDlq } from "../lib/queue.js";
 
 // Import all test suites to run sequentially in a single process
 import "./health.test.js";
@@ -13,10 +13,12 @@ import "./socket.test.js";
 import "./schedule.test.js";
 import "./service.test.js";
 import "./unit17-security.test.js";
+import "./unit18-queue-concurrency.test.js";
 
 // Global teardown to cleanly close all persistent singleton connections
 after(async () => {
   await escalationQueue.close();
+  await escalationDlq.close();
   await prisma.$disconnect();
   redis.disconnect();
   // Ensure clean exit without hanging event loop handles

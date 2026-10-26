@@ -200,7 +200,20 @@ export class EscalationService {
             { incidentId, status: incident?.status },
             "Escalation aborted: Incident is no longer in TRIGGERED status",
           );
-          return;
+          return null;
+        }
+
+        // Concurrency guard: If already escalated to or beyond this step, abort
+        if (incident.escalationStep >= targetStepNumber) {
+          logger.info(
+            {
+              incidentId,
+              currentStep: incident.escalationStep,
+              targetStepNumber,
+            },
+            "Escalation aborted: Incident has already reached or passed target step",
+          );
+          return null;
         }
 
         const rules = incident.service.escalationPolicy
@@ -214,7 +227,7 @@ export class EscalationService {
             { incidentId, targetStepNumber },
             "Escalation completed: Reached max policy tier",
           );
-          return;
+          return null;
         }
 
         // 3. Resolve target user for this step
@@ -268,22 +281,16 @@ export class EscalationService {
           updatedAt: updatedIncident.updatedAt.toISOString(),
         };
 
-        // Broadcast real-time escalation event
-        socketEmitter.broadcastIncidentEscalated(incidentDetail);
-
-        logger.warn(
-          {
-            incidentId: updatedIncident.id,
-            newStep: targetStepNumber,
-            assigneeId: updatedIncident.assigneeId,
-          },
-          `🚨 Incident auto-escalated to Step ${targetStepNumber}`,
-        );
-
         // 6. Check next step if available
         const subsequentRule = rules.find(
           (r: EscalationRuleRecord) => r.stepNumber === targetStepNumber + 1,
         );
+
+        let nextStepToSchedule: {
+          incidentId: string;
+          stepNumber: number;
+          delayMs: number;
+        } | null = null;
 
         if (subsequentRule) {
           const delaySeconds =
@@ -291,23 +298,39 @@ export class EscalationService {
               ? env.ESCALATION_DEFAULT_TIMEOUT_SEC
               : targetRule.delayMinutes * 60;
 
-          return {
+          nextStepToSchedule = {
             incidentId: incident.id,
             stepNumber: targetStepNumber + 1,
             delayMs: delaySeconds * 1000,
           };
         }
 
-        return null;
+        return { incidentDetail, nextStepToSchedule };
       },
     );
 
     if (nextStepToSchedule) {
-      await this.scheduleEscalationStep(
-        nextStepToSchedule.incidentId,
-        nextStepToSchedule.stepNumber,
-        nextStepToSchedule.delayMs,
+      // Side effects executed safely outside database transaction
+      socketEmitter.broadcastIncidentEscalated(
+        nextStepToSchedule.incidentDetail,
       );
+
+      logger.warn(
+        {
+          incidentId: nextStepToSchedule.incidentDetail.id,
+          newStep: targetStepNumber,
+          assigneeId: nextStepToSchedule.incidentDetail.assigneeId,
+        },
+        `🚨 Incident auto-escalated to Step ${targetStepNumber}`,
+      );
+
+      if (nextStepToSchedule.nextStepToSchedule) {
+        await this.scheduleEscalationStep(
+          nextStepToSchedule.nextStepToSchedule.incidentId,
+          nextStepToSchedule.nextStepToSchedule.stepNumber,
+          nextStepToSchedule.nextStepToSchedule.delayMs,
+        );
+      }
     }
   }
 

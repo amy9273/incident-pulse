@@ -45,7 +45,6 @@ describe("BullMQ Escalation State Machine Worker (Unit 05)", () => {
 
   after(async () => {
     await worker.close();
-    await escalationQueue.close();
   });
 
   describe("Incident Triage Endpoints", () => {

@@ -15,9 +15,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, "../apps/api/.env") });
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
-const redisUrl =
-  process.env.REDIS_URL ||
-  "redis://default:2MlpHoYSdKphNrkoY5hHqtO0u4oy2hQL@cattle-ring-neosleek-18395.db.redis.io:13215";
+const redisUrl = process.env.REDIS_URL;
 const databaseUrl = process.env.DATABASE_URL;
 
 async function runKeepalive() {
@@ -25,27 +23,36 @@ async function runKeepalive() {
   const startTime = Date.now();
 
   // 1. Redis Heartbeat (Prevents Redis Cloud free-tier 14-day inactivity deletion)
-  console.log("📡 Connecting to Redis Cloud...");
-  const redis = new Redis(redisUrl, {
-    connectTimeout: 10000,
-    maxRetriesPerRequest: 3,
-    lazyConnect: false,
-  });
+  if (redisUrl) {
+    console.log("📡 Connecting to Redis Cloud...");
+    const redis = new Redis(redisUrl, {
+      connectTimeout: 10000,
+      maxRetriesPerRequest: 3,
+      lazyConnect: false,
+    });
 
-  try {
-    const pong = await redis.ping();
-    const timestamp = new Date().toISOString();
-    await redis.set("keepalive:heartbeat", timestamp, "EX", 60 * 60 * 24 * 30);
-    const stored = await redis.get("keepalive:heartbeat");
+    try {
+      const pong = await redis.ping();
+      const timestamp = new Date().toISOString();
+      await redis.set(
+        "keepalive:heartbeat",
+        timestamp,
+        "EX",
+        60 * 60 * 24 * 30,
+      );
+      const stored = await redis.get("keepalive:heartbeat");
 
-    console.log(`✅ Redis Cloud Active: PING -> ${pong}`);
-    console.log(`📝 Redis Heartbeat Registered: ${stored}`);
-  } catch (err: unknown) {
-    const errorMessage = err instanceof Error ? err.message : String(err);
-    console.error(`❌ Redis Cloud Heartbeat Failed: ${errorMessage}`);
-    process.exitCode = 1;
-  } finally {
-    redis.disconnect();
+      console.log(`✅ Redis Cloud Active: PING -> ${pong}`);
+      console.log(`📝 Redis Heartbeat Registered: ${stored}`);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.error(`❌ Redis Cloud Heartbeat Failed: ${errorMessage}`);
+      process.exitCode = 1;
+    } finally {
+      redis.disconnect();
+    }
+  } else {
+    console.warn("⚠️ REDIS_URL not configured; skipping Redis heartbeat");
   }
 
   // 2. PostgreSQL Heartbeat (Prevents Neon serverless auto-archival)
