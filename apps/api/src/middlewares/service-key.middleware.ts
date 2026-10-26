@@ -1,13 +1,14 @@
 import { Request, Response, NextFunction } from "express";
 import { prisma } from "../lib/prisma.js";
 import { UnauthorizedError } from "../errors/index.js";
+import { logger } from "../lib/logger.js";
 
 /**
  * Middleware that validates an incoming Service API Key for machine-to-machine integrations (e.g., Webhook alert ingestion).
  * Accepts key from:
- * 1. Authorization: Bearer inc_live_...
- * 2. x-service-key: inc_live_...
- * 3. Route parameter: :serviceKey (e.g., /api/v1/webhooks/services/:serviceKey)
+ * 1. Authorization: Bearer inc_live_... (Recommended)
+ * 2. x-service-key: inc_live_... (Header)
+ * 3. Route parameter: :serviceKey (Deprecated for security - CWE-598)
  */
 export const authenticateServiceKey = async (
   req: Request,
@@ -16,8 +17,9 @@ export const authenticateServiceKey = async (
 ): Promise<void> => {
   try {
     let serviceKey: string | undefined;
+    let isViaUrlParam = false;
 
-    // 1. Check Authorization Header (Bearer inc_live_...)
+    // 1. Check Authorization Header (Bearer inc_live_...) - Preferred
     const authHeader = req.headers.authorization;
     if (authHeader) {
       const [scheme, token] = authHeader.split(" ");
@@ -35,14 +37,15 @@ export const authenticateServiceKey = async (
       }
     }
 
-    // 3. Fallback to route param (:serviceKey)
+    // 3. Fallback to route param (:serviceKey) - Deprecated
     if (!serviceKey && req.params && req.params.serviceKey) {
       serviceKey = req.params.serviceKey.trim();
+      isViaUrlParam = true;
     }
 
     if (!serviceKey) {
       throw new UnauthorizedError(
-        "Service API key missing. Provide 'Authorization: Bearer inc_live_...', 'x-service-key', or ':serviceKey' route parameter.",
+        "Service API key missing. Provide 'Authorization: Bearer inc_live_...' or 'x-service-key' header.",
       );
     }
 
@@ -62,6 +65,13 @@ export const authenticateServiceKey = async (
 
     if (!service) {
       throw new UnauthorizedError("Invalid or inactive service API key");
+    }
+
+    if (isViaUrlParam) {
+      logger.warn(
+        { path: req.path, serviceId: service.id },
+        "Security Deprecation Warning: Passing API serviceKey via URL path parameter is deprecated (CWE-598). Use 'Authorization: Bearer <key>' or 'x-service-key' header instead.",
+      );
     }
 
     req.service = service;

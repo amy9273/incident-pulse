@@ -11,6 +11,13 @@ export const getRedisClient = (): Redis => {
       enableReadyCheck: false,
       lazyConnect: true,
       retryStrategy(times) {
+        if (times > 10) {
+          logger.error(
+            { attempt: times },
+            "❌ Max Redis reconnection attempts (10) reached. Halting reconnect.",
+          );
+          return null;
+        }
         const delay = Math.min(times * 100, 3000);
         logger.warn({ attempt: times, delay }, "Reconnecting to Redis...");
         return delay;

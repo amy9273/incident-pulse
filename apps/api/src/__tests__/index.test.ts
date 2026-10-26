@@ -12,6 +12,7 @@ import "./escalation.test.js";
 import "./socket.test.js";
 import "./schedule.test.js";
 import "./service.test.js";
+import "./unit17-security.test.js";
 
 // Global teardown to cleanly close all persistent singleton connections
 after(async () => {

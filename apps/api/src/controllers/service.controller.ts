@@ -3,12 +3,12 @@ import { serviceService } from "../services/service.service.js";
 
 export class ServiceController {
   async listServices(
-    _req: Request,
+    req: Request,
     res: Response,
     next: NextFunction,
   ): Promise<void> {
     try {
-      const services = await serviceService.listServices();
+      const services = await serviceService.listServices(req.user?.role);
       res.status(200).json({ services });
     } catch (err) {
       next(err);
@@ -22,7 +22,10 @@ export class ServiceController {
   ): Promise<void> {
     try {
       const { id } = req.params;
-      const service = await serviceService.getServiceById(id as string);
+      const service = await serviceService.getServiceById(
+        id as string,
+        req.user?.role,
+      );
       res.status(200).json({ service });
     } catch (err) {
       next(err);

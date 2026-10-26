@@ -55,3 +55,8 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
+
+# Internal Audit Reports (NEVER COMMIT OR PUSH)
+AUDIT_REPORT.md
+*AUDIT_REPORT*.md
+
